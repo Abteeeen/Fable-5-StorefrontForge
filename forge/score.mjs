@@ -1,9 +1,9 @@
 #!/usr/bin/env node
-/* Ad-creative scoring via OpenRouter (cheap vision model).
+/* Ad-creative scoring via Groq (free, fast hosted inference, vision model).
  * Ranks the launch-kit creatives against a fixed rubric and writes scores.json.
  *
- * Usage: OPENROUTER_API_KEY=sk-or-... node forge/score.mjs [launch-kit-dir]
- * Optional: OPENROUTER_MODEL (default: a low-cost vision-capable model).
+ * Usage: GROQ_API_KEY=gsk_... node forge/score.mjs [launch-kit-dir]
+ * Optional: GROQ_MODEL (default: a free Llama 4 Scout vision model).
  *
  * Without an API key it falls back to a deterministic heuristic ranking so the
  * pipeline never blocks; the report marks which path was used.
@@ -16,8 +16,8 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const kitDir = path.resolve(process.argv[2] || path.join(ROOT, 'launch-kit'));
 const manifest = JSON.parse(fs.readFileSync(path.join(kitDir, 'manifest.json'), 'utf8'));
 
-const API_KEY = process.env.OPENROUTER_API_KEY;
-const MODEL = process.env.OPENROUTER_MODEL || 'google/gemini-2.5-flash-lite';
+const API_KEY = process.env.GROQ_API_KEY;
+const MODEL = process.env.GROQ_MODEL || 'meta-llama/llama-4-scout-17b-16e-instruct';
 
 const RUBRIC = `You are a performance-marketing creative reviewer. Score this ad creative 0-10 on each criterion:
 1. hook: does it stop the scroll? Is the first visual impression strong?
@@ -28,7 +28,7 @@ Reply with STRICT JSON only: {"hook":n,"clarity":n,"thumbnail":n,"brand":n,"note
 
 async function scoreWithModel(file) {
   const img = fs.readFileSync(path.join(kitDir, file)).toString('base64');
-  const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: { Authorization: `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -43,7 +43,7 @@ async function scoreWithModel(file) {
       temperature: 0.2,
     }),
   });
-  if (!res.ok) throw new Error(`OpenRouter ${res.status}: ${(await res.text()).slice(0, 300)}`);
+  if (!res.ok) throw new Error(`Groq ${res.status}: ${(await res.text()).slice(0, 300)}`);
   const data = await res.json();
   const text = data.choices[0].message.content;
   const json = JSON.parse(text.slice(text.indexOf('{'), text.lastIndexOf('}') + 1));
@@ -57,7 +57,7 @@ function heuristicScore(entry) {
   let total = 6;
   if (entry.format.startsWith('1080x1080')) total += 0.5;
   if (entry.variant === 'clean') total += 0.5;
-  return { hook: null, clarity: null, thumbnail: null, brand: null, total, note: 'heuristic fallback — set OPENROUTER_API_KEY for model scoring' };
+  return { hook: null, clarity: null, thumbnail: null, brand: null, total, note: 'heuristic fallback — set GROQ_API_KEY for model scoring' };
 }
 
 const results = [];
@@ -80,7 +80,7 @@ for (const entry of manifest) {
 results.sort((a, b) => b.total - a.total);
 const report = {
   scoredAt: new Date().toISOString(),
-  method: API_KEY ? `openrouter:${MODEL}` : 'heuristic-fallback',
+  method: API_KEY ? `groq:${MODEL}` : 'heuristic-fallback',
   topPicks: results.slice(0, 3).map((r) => r.file),
   results,
 };

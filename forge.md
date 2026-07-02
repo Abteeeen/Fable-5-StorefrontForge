@@ -1,7 +1,7 @@
 # StorefrontForge — Operator Playbook
 
 Photos + one sentence in → live branded store with 360° product viewers + a scored launch-ad kit out.
-Free stack: static site on GitHub Pages, Playwright-rendered ads, OpenRouter for cheap-model steps.
+Free stack: static site on GitHub Pages, Playwright-rendered ads, Groq for free-model steps.
 
 ## Pipeline (per store)
 
@@ -20,14 +20,14 @@ intake/<store>/
    one slow rotation) — extract frames with:
    `ffmpeg -i turntable.mp4 -vf "fps=<count/duration>" frame_%02d.png`
    Background removal (optional, recommended): `rembg` (open source, CPU) on each frame.
-2. **Draft brand + copy.** `OPENROUTER_API_KEY=... node forge/copywriter.mjs intake/<store>`
+2. **Draft brand + copy.** `GROQ_API_KEY=... node forge/copywriter.mjs intake/<store>`
    drafts `store.json` from `brief.txt` with a cheap model. **Review before building** —
    cheap models draft, a human (or stronger model) approves. Write `product.json` per product.
 3. **Build.** `node forge/build.mjs intake/<store> dist` — full static site in `dist/`.
 4. **QA.** `node forge/preview.mjs` — serves `dist/` and screenshots home + product page to `qa/`.
 5. **Ads.** `node forge/render-ads.mjs intake/<store> launch-kit` — 4 creatives per product
    (clean/bold × square/story), rendered from the store's real product imagery. $0.
-6. **Score.** `OPENROUTER_API_KEY=... node forge/score.mjs launch-kit` — cheap vision model
+6. **Score.** `GROQ_API_KEY=... node forge/score.mjs launch-kit` — free vision model
    scores each creative on hook/clarity/thumbnail/brand; `scores.json` ranks them and names
    top picks. Falls back to a heuristic without a key.
 7. **Deploy.** Push to a branch listed in `.github/workflows/pages.yml`; GitHub Pages builds
@@ -86,8 +86,8 @@ whole pipeline can be exercised without a client.
 
 - Hosting: GitHub Pages — $0.
 - Media: Playwright renders + client photos — $0.
-- Cheap-model steps (OpenRouter): copy drafting + ad scoring — fractions of a cent per store.
-  Set `OPENROUTER_API_KEY` (and optionally `OPENROUTER_MODEL`) in the environment.
+- Free-model steps (Groq): copy drafting + ad scoring — $0 per store on Groq's free tier.
+  Set `GROQ_API_KEY` (and optionally `GROQ_MODEL`) in the environment.
 - Claude: pipeline engineering, judgment calls, fixes. Routine per-store production should not
   need Claude at all once the template fits the vertical.
 

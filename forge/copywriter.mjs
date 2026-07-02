@@ -1,10 +1,10 @@
 #!/usr/bin/env node
-/* Brand-config + copy drafting via OpenRouter (cheap text model).
+/* Brand-config + copy drafting via Groq (free, fast hosted inference).
  * Turns intake/<store>/brief.txt into a draft store.json (brand voice, palette,
  * headline, tagline) — the step that would otherwise spend Claude tokens.
  *
- * Usage: OPENROUTER_API_KEY=sk-or-... node forge/copywriter.mjs <intake-dir>
- * Optional: OPENROUTER_MODEL (default: a low-cost text model).
+ * Usage: GROQ_API_KEY=gsk_... node forge/copywriter.mjs <intake-dir>
+ * Optional: GROQ_MODEL (default: a free Llama 3.3 70B).
  *
  * Writes store.json only if it does not already exist (never overwrites a
  * hand-tuned config). Review the draft before building — cheap models draft,
@@ -27,12 +27,12 @@ if (fs.existsSync(outPath)) {
   console.log(`store.json already exists — not overwriting. Delete it to re-draft.`);
   process.exit(0);
 }
-const API_KEY = process.env.OPENROUTER_API_KEY;
+const API_KEY = process.env.GROQ_API_KEY;
 if (!API_KEY) {
-  console.error('OPENROUTER_API_KEY not set. Either set it, or write store.json by hand (see intake/demo/store.json for the schema).');
+  console.error('GROQ_API_KEY not set. Either set it, or write store.json by hand (see intake/demo/store.json for the schema).');
   process.exit(1);
 }
-const MODEL = process.env.OPENROUTER_MODEL || 'meta-llama/llama-3.3-70b-instruct';
+const MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
 
 const brief = fs.readFileSync(briefPath, 'utf8').trim();
 const example = fs.readFileSync(path.join(ROOT, 'intake/demo/store.json'), 'utf8');
@@ -46,13 +46,13 @@ ${example}
 
 Rules: palette must be tasteful and match the brief's vibe (bg near-white or near-black, accent saturated, text high-contrast on bg). headline max 8 words. tagline max 25 words. orderLink: keep the placeholder wa.me link if no contact given. fonts.googleFonts must be a valid Google Fonts css2 query for the two families you pick.`;
 
-const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
   method: 'POST',
   headers: { Authorization: `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
   body: JSON.stringify({ model: MODEL, messages: [{ role: 'user', content: prompt }], temperature: 0.7 }),
 });
 if (!res.ok) {
-  console.error(`OpenRouter ${res.status}: ${(await res.text()).slice(0, 300)}`);
+  console.error(`Groq ${res.status}: ${(await res.text()).slice(0, 300)}`);
   process.exit(1);
 }
 const data = await res.json();
