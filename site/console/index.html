@@ -59,10 +59,10 @@
 
     /* console log */
     .term { background:#0a0b0e; border:1px solid var(--line); border-radius:18px; overflow:hidden; }
-    .term .bar { display:flex; gap:7px; padding:12px 16px; border-bottom:1px solid var(--line); align-items:center; }
-    .term .dot { width:11px; height:11px; border-radius:50%; background:#2a2d38; }
-    .term .dot:nth-child(1){background:#ff6159}.term .dot:nth-child(2){background:#ffbd2e}.term .dot:nth-child(3){background:#28c841}
-    .term .bar span { margin-left:10px; font-size:.78rem; color:var(--muted); font-family:ui-monospace,monospace; }
+    .term .bar { display:flex; gap:9px; padding:13px 18px; border-bottom:1px solid var(--line); align-items:center; }
+    .term .status { width:8px; height:8px; border-radius:50%; background:#3a3d48; flex-shrink:0; }
+    .term .status.live { background:var(--ok); box-shadow:0 0 0 3px rgba(95,211,154,.18); }
+    .term .bar span { font-size:.78rem; color:var(--muted); font-family:ui-monospace,monospace; letter-spacing:.02em; }
     #log { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.8rem; padding:18px 20px; height:340px; overflow-y:auto; white-space:pre-wrap; word-break:break-word; color:#c8cdd8; }
     #log .t { color:#5a6070; } #log .ok { color:var(--ok); } #log .step { color:var(--accent); font-weight:700; }
     #log .json { color:var(--warn); } #log .dim { color:#7c8290; }
@@ -95,7 +95,7 @@
   <main class="container">
     <div class="intro">
       <h1>Forge a store, right here</h1>
-      <p>This is the same pipeline that builds client stores, running live in your browser: intake → brand derivation → copywriting → build → preview. Nothing is uploaded anywhere — it's a faithful, local demonstration of the production flow. In production, the pipeline additionally renders the launch ad kit, scores it, and deploys to a public URL.</p>
+      <p>Runs the same intake → brand → copy → build → preview pipeline we use for client stores, entirely in this browser tab — nothing is uploaded, nothing costs a token. The one thing this local build skips: the production pipeline also drafts copy with an AI model, renders a scored launch-ad kit, and publishes to a public URL.</p>
     </div>
 
     <div class="grid">
@@ -110,15 +110,15 @@
         <div id="products"></div>
         <button class="add-product" id="add-product">+ add another product</button>
         <div class="forge-row">
-          <button class="btn btn-primary" id="forge" disabled>⚒ Forge my store</button>
+          <button class="btn btn-primary" id="forge" disabled>Forge my store</button>
           <span class="hint" id="forge-hint">add a business name, sentence & at least one product photo</span>
         </div>
       </div>
 
       <div>
         <div class="term">
-          <div class="bar"><div class="dot"></div><div class="dot"></div><div class="dot"></div><span>forge · pipeline log</span></div>
-          <div id="log"><span class="dim">— idle. Submit an intake to watch the pipeline run. —</span></div>
+          <div class="bar"><div class="status" id="term-status"></div><span>pipeline log</span></div>
+          <div id="log"><span class="dim">Waiting on intake. Fill in the form and forge to watch each step run.</span></div>
         </div>
         <div class="preview-wrap">
           <div class="preview-head">
@@ -346,6 +346,7 @@ document.getElementById('forge').onclick = async () => {
   const s = intakeState();
   logEl.innerHTML = '';
   document.getElementById('forge').disabled = true;
+  document.getElementById('term-status').classList.add('live');
 
   log('forge run started', 'step');
   log(`intake received: "${s.bizname}" · ${s.products.length} product(s) · ${s.products.reduce((n, p) => n + p.files.length, 0)} photo(s)`);
