@@ -167,7 +167,7 @@ function addProductBlock() {
       <div><label>Price</label><input type="text" class="p-price" placeholder="$34"></div>
     </div>
     <label>Photos</label>
-    <div class="drop">click to add photos — <b>6+ photos of the product rotating = 360° viewer</b>, 1 photo = still</div>
+    <div class="drop">click to add photos — <b>6+ photos of the product rotating = 360° viewer</b>, 1 photo = still. A single collage of angles works too: we detect the grid and slice it.</div>
     <input type="file" accept="image/*" multiple hidden>
     <div class="thumbs"></div>`;
   const fileInput = div.querySelector('input[type=file]');
@@ -251,6 +251,102 @@ async function dominantColor(dataUrl) {
 const hex = ([r, g, b]) => '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('');
 function darken([r, g, b], f) { return [r, g, b].map(v => Math.round(v * f)); }
 
+/* ---------- product-focused photo processing ----------
+ * Photos arrive at any size/aspect. We find the product inside each photo
+ * (background estimated from the border, then a content bounding box), crop
+ * to it, and re-center every frame on an identical square canvas — so mixed
+ * sizes never break the layout or the spin viewer.
+ */
+function scaledData(img, max = 520) {
+  const scale = Math.min(1, max / Math.max(img.width, img.height));
+  const w = Math.max(1, Math.round(img.width * scale)), h = Math.max(1, Math.round(img.height * scale));
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  const x = c.getContext('2d', { willReadFrequently: true });
+  x.drawImage(img, 0, 0, w, h);
+  return { d: x.getImageData(0, 0, w, h).data, w, h, scale };
+}
+function borderBg(d, w, h) {
+  let r = 0, g = 0, b = 0, n = 0;
+  const px = (x, y) => { const i = (y * w + x) * 4; r += d[i]; g += d[i + 1]; b += d[i + 2]; n++; };
+  for (let x = 0; x < w; x += 2) { px(x, 0); px(x, h - 1); }
+  for (let y = 0; y < h; y += 2) { px(0, y); px(w - 1, y); }
+  return [r / n, g / n, b / n];
+}
+function isBgPx(d, i, bg, tol) {
+  return Math.abs(d[i] - bg[0]) + Math.abs(d[i + 1] - bg[1]) + Math.abs(d[i + 2] - bg[2]) < tol;
+}
+function contentBox(d, w, h, bg, tol = 110) {
+  let minX = w, minY = h, maxX = -1, maxY = -1;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    if (!isBgPx(d, (y * w + x) * 4, bg, tol)) {
+      if (x < minX) minX = x; if (x > maxX) maxX = x;
+      if (y < minY) minY = y; if (y > maxY) maxY = y;
+    }
+  }
+  if (maxX < 0) return null;
+  return { x: minX, y: minY, w: maxX - minX + 1, h: maxY - minY + 1 };
+}
+/* src may be an Image or a canvas; region is in src coordinates (optional) */
+function normalizeFrame(src, region) {
+  const rw = region ? region.w : src.width, rh = region ? region.h : src.height;
+  const rx = region ? region.x : 0, ry = region ? region.y : 0;
+  // find the product inside this region
+  const tmp = document.createElement('canvas');
+  const tScale = Math.min(1, 520 / Math.max(rw, rh));
+  tmp.width = Math.max(1, Math.round(rw * tScale)); tmp.height = Math.max(1, Math.round(rh * tScale));
+  const tx = tmp.getContext('2d', { willReadFrequently: true });
+  tx.drawImage(src, rx, ry, rw, rh, 0, 0, tmp.width, tmp.height);
+  const d = tx.getImageData(0, 0, tmp.width, tmp.height).data;
+  const bg = borderBg(d, tmp.width, tmp.height);
+  let box = contentBox(d, tmp.width, tmp.height, bg);
+  const areaFrac = box ? (box.w * box.h) / (tmp.width * tmp.height) : 0;
+  if (!box || areaFrac < 0.02 || areaFrac > 0.985) box = { x: 0, y: 0, w: tmp.width, h: tmp.height }; // busy background — keep whole frame
+  // map back to source coords with 8% padding
+  const pad = 0.08 * Math.max(box.w, box.h);
+  const sx = rx + Math.max(0, (box.x - pad)) / tScale, sy = ry + Math.max(0, (box.y - pad)) / tScale;
+  const sw = Math.min(rw - (sx - rx), (box.w + pad * 2) / tScale), sh = Math.min(rh - (sy - ry), (box.h + pad * 2) / tScale);
+  // compose on a fixed square canvas so every frame matches
+  const S = 900, out = document.createElement('canvas'); out.width = out.height = S;
+  const ox = out.getContext('2d');
+  ox.fillStyle = `rgb(${Math.round(bg[0])},${Math.round(bg[1])},${Math.round(bg[2])})`;
+  ox.fillRect(0, 0, S, S);
+  const fit = Math.min(S / sw, S / sh) * 0.86;
+  ox.imageSmoothingQuality = 'high';
+  ox.drawImage(src, sx, sy, sw, sh, (S - sw * fit) / 2, (S - sh * fit) / 2, sw * fit, sh * fit);
+  return { url: out.toDataURL('image/jpeg', 0.85), bg };
+}
+/* Detect a contact sheet (one image holding a grid of angles) and slice it.
+ * Looks for full-width / full-height background gutters between content bands. */
+function bands(frac, len) {
+  const t = 0.02, out = [];
+  let start = -1;
+  for (let i = 0; i < len; i++) {
+    const content = frac[i] > t;
+    if (content && start < 0) start = i;
+    if ((!content || i === len - 1) && start >= 0) {
+      const end = content ? i : i - 1;
+      if (end - start > len * 0.04) out.push({ start, end });
+      start = -1;
+    }
+  }
+  return out;
+}
+function sliceSheet(img) {
+  const { d, w, h, scale } = scaledData(img, 700);
+  const bg = borderBg(d, w, h), tol = 110;
+  const rowFrac = new Float32Array(h), colFrac = new Float32Array(w);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    if (!isBgPx(d, (y * w + x) * 4, bg, tol)) { rowFrac[y] += 1 / w; colFrac[x] += 1 / h; }
+  }
+  const rows = bands(rowFrac, h), cols = bands(colFrac, w);
+  if (rows.length * cols.length < 4 || (rows.length < 2 && cols.length < 2)) return null;
+  const regions = [];
+  for (const r of rows) for (const c of cols) {
+    regions.push({ x: c.start / scale, y: r.start / scale, w: (c.end - c.start + 1) / scale, h: (r.end - r.start + 1) / scale });
+  }
+  return { regions, grid: `${rows.length}×${cols.length}` };
+}
+
 /* ---------- copywriting heuristics (production uses the AI copywriter) ---------- */
 function draftCopy(bizname, brief) {
   const clauses = brief.split(/[;.,]/).map(s => s.trim()).filter(Boolean);
@@ -267,40 +363,66 @@ function storeHtml(cfg) {
   const esc = (s) => String(s ?? '').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
   const waLink = cfg.wa ? `https://wa.me/${cfg.wa.replace(/[^0-9]/g, '')}?text=Hi%20${encodeURIComponent(cfg.name)}!%20I%27d%20like%20to%20order` : '#order';
   const spinJs = `(${String(spinViewerRuntime)})();`;
+  const year = new Date().getFullYear();
+  const navLinks = cfg.products.map((p, i) => `<a href="#p${i}">${esc(p.name)}</a>`).join('');
   const sections = cfg.products.map((p, i) => `
-    <section class="p" id="p${i}">
+    <section class="p${i % 2 ? ' flip' : ''}" id="p${i}">
       ${p.frames.length >= 6
-        ? `<div class="viewer spin" data-i="${i}"><canvas></canvas><div class="hint">↺ drag to rotate</div></div>`
+        ? `<div class="viewer spin" data-i="${i}"><canvas></canvas><div class="hint">drag to rotate</div></div>`
         : `<div class="viewer"><img src="${p.frames[0]}" alt="${esc(p.name)}"></div>`}
       <div class="info">
+        <div class="idx">${String(i + 1).padStart(2, '0')}</div>
         <h2>${esc(p.name)}</h2>
-        <div class="price">${esc(p.price)}</div>
+        ${p.price ? `<div class="price">${esc(p.price)}</div>` : ''}
         <a class="cta" href="${waLink}">Order on WhatsApp</a>
+        ${p.frames.length >= 6 ? '<div class="note360">Interactive 360° view — drag the product</div>' : ''}
       </div>
     </section>`).join('');
-  return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${esc(cfg.name)}</title><style>
-*{margin:0;padding:0;box-sizing:border-box}body{font-family:system-ui,sans-serif;background:${cfg.bg};color:${cfg.text};line-height:1.6}
-.wrap{max-width:960px;margin:0 auto;padding:0 22px}
-header{padding:80px 0 60px;text-align:center;background:radial-gradient(800px 300px at 50% -10%, ${cfg.accent}22, transparent)}
-header .mark{font-weight:800;letter-spacing:.12em;text-transform:uppercase;font-size:.8rem;color:${cfg.accent};margin-bottom:18px}
-h1{font-family:Georgia,serif;font-size:clamp(1.9rem,5vw,3rem);letter-spacing:-.02em;line-height:1.15;max-width:700px;margin:0 auto 14px}
-header p{opacity:.7;max-width:520px;margin:0 auto}
-.p{display:grid;gap:34px;grid-template-columns:1fr;padding:44px 0;border-top:1px solid ${cfg.text}14;align-items:center}
-@media(min-width:760px){.p{grid-template-columns:1.1fr 1fr}}
-.viewer{aspect-ratio:1;background:radial-gradient(closest-side,${cfg.accent}12,#ffffff);border-radius:20px;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center}
-.viewer img{max-width:88%;max-height:88%;object-fit:contain}
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${esc(cfg.name)}</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:Inter,system-ui,sans-serif;background:${cfg.bg};color:${cfg.text};line-height:1.65;-webkit-font-smoothing:antialiased}
+.serif{font-family:Fraunces,Georgia,serif}
+.wrap{max-width:1020px;margin:0 auto;padding:0 26px}
+nav{position:sticky;top:0;z-index:20;background:${cfg.bg}e8;backdrop-filter:blur(12px);border-bottom:1px solid ${cfg.text}12}
+nav .wrap{height:62px;display:flex;align-items:center;justify-content:space-between;gap:18px}
+nav .brand{font-family:Fraunces,Georgia,serif;font-size:1.12rem;font-weight:600;letter-spacing:.01em;text-decoration:none;color:inherit}
+nav .links{display:flex;gap:22px;align-items:center;overflow-x:auto}
+nav .links a{font-size:.85rem;color:inherit;opacity:.62;text-decoration:none;white-space:nowrap;transition:opacity .15s}
+nav .links a:hover{opacity:1}
+nav .order{font-size:.83rem;font-weight:600;color:${cfg.bg};background:${cfg.text};padding:8px 18px;border-radius:999px;text-decoration:none;white-space:nowrap}
+header{padding:96px 0 84px;text-align:center}
+header .mark{font-size:.74rem;font-weight:600;letter-spacing:.24em;text-transform:uppercase;color:${cfg.accent};margin-bottom:22px}
+h1{font-family:Fraunces,Georgia,serif;font-weight:600;font-size:clamp(2rem,5.2vw,3.4rem);letter-spacing:-.015em;line-height:1.12;max-width:760px;margin:0 auto 18px}
+header p{opacity:.62;max-width:540px;margin:0 auto;font-size:1.04rem}
+.p{display:grid;gap:48px;grid-template-columns:1fr;padding:72px 0;border-top:1px solid ${cfg.text}10;align-items:center}
+@media(min-width:800px){.p{grid-template-columns:1.05fr 1fr}.p.flip .viewer{order:2}}
+.viewer{aspect-ratio:1;background:${cfg.frameBg || '#f4f2ef'};border-radius:6px;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 2px ${cfg.text}0a,0 12px 40px -12px ${cfg.text}1f}
+.viewer img{max-width:92%;max-height:92%;object-fit:contain}
 .viewer canvas{width:100%;height:100%}
 .viewer.spin{cursor:grab;touch-action:pan-y}
-.hint{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);font-size:.78rem;opacity:.55;background:#ffffffcc;padding:3px 12px;border-radius:999px;pointer-events:none}
-.info h2{font-family:Georgia,serif;font-size:1.9rem;margin-bottom:6px}
-.price{color:${cfg.accent};font-weight:700;font-size:1.3rem;margin-bottom:18px}
-.cta{display:inline-block;background:${cfg.accent};color:#fff;font-weight:700;padding:13px 32px;border-radius:999px;text-decoration:none}
-footer{text-align:center;padding:40px 0;opacity:.55;font-size:.85rem;border-top:1px solid ${cfg.text}14}
+.viewer.spin:active{cursor:grabbing}
+.hint{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);font-size:.74rem;letter-spacing:.06em;text-transform:uppercase;opacity:.5;background:${cfg.bg}d9;padding:4px 14px;border-radius:999px;pointer-events:none}
+.info .idx{font-family:Fraunces,Georgia,serif;font-size:.9rem;opacity:.35;margin-bottom:10px}
+.info h2{font-family:Fraunces,Georgia,serif;font-weight:600;font-size:2rem;letter-spacing:-.01em;margin-bottom:4px}
+.price{font-size:1.12rem;font-weight:500;opacity:.75;margin-bottom:26px}
+.cta{display:inline-block;background:${cfg.accent};color:#fff;font-weight:600;font-size:.92rem;padding:14px 34px;border-radius:999px;text-decoration:none;transition:opacity .15s}
+.cta:hover{opacity:.88}
+.note360{font-size:.8rem;opacity:.5;margin-top:16px}
+footer{border-top:1px solid ${cfg.text}10;padding:52px 0;text-align:center}
+footer .fbrand{font-family:Fraunces,Georgia,serif;font-size:1.15rem;margin-bottom:8px}
+footer p{font-size:.84rem;opacity:.5}
 </style></head><body>
+<nav><div class="wrap">
+  <a class="brand" href="#">${esc(cfg.name)}</a>
+  <div class="links">${navLinks}</div>
+  <a class="order" href="${waLink}">Order</a>
+</div></nav>
 <header class="wrap"><div class="mark">${esc(cfg.name)}</div><h1>${esc(cfg.headline)}</h1><p>${esc(cfg.tagline)}</p></header>
 <main class="wrap">${sections}</main>
-<footer>© ${new Date().getFullYear()} ${esc(cfg.name)} · forged by StorefrontForge</footer>
+<footer><div class="fbrand">${esc(cfg.name)}</div><p>© ${year} ${esc(cfg.name)} · orders via WhatsApp</p></footer>
 <script>window.__FRAMES__=${JSON.stringify(cfg.products.map(p => p.frames.length >= 6 ? p.frames : []))};<\/script>
 <script>${spinJs}<\/script>
 </body></html>`;
@@ -373,15 +495,31 @@ document.getElementById('forge').onclick = async () => {
   log('  (console uses the local drafting engine; production routes this to the AI copywriter)', 'dim');
   await sleep(500);
 
-  log('STEP 4/5 · encoding photos & assembling store', 'step');
+  log('STEP 4/5 · processing photos — isolating the product in each shot', 'step');
   const products = [];
+  let frameBg = null;
   for (const p of s.products) {
+    const imgs = [];
+    for (const f of p.files) imgs.push(await loadImg(await fileToDataURL(f)));
+    // one image that is really a grid of angles? slice it into frames
+    let jobs = imgs.map((img) => ({ img, region: null }));
+    if (imgs.length === 1) {
+      const sheet = sliceSheet(imgs[0]);
+      if (sheet) {
+        log(`  "${p.name || 'product'}": contact sheet detected (${sheet.grid} grid) → ${sheet.regions.length} angles extracted`);
+        jobs = sheet.regions.map((region) => ({ img: imgs[0], region }));
+      }
+    }
     const frames = [];
-    for (const f of p.files) frames.push(await fileToDataURL(f));
+    for (const j of jobs) {
+      const norm = normalizeFrame(j.img, j.region);
+      frames.push(norm.url);
+      if (!frameBg) frameBg = hex(norm.bg.map(Math.round));
+    }
+    log(`  "${p.name || 'product'}": ${frames.length} frame(s) → product-centered on uniform 900×900 canvas ${frames.length >= 6 ? '(360° spin)' : '(still)'}`);
     products.push({ name: p.name || 'Product', price: p.price || '', frames });
-    log(`  ${p.name || 'product'}: ${frames.length} frame(s) encoded`);
   }
-  lastHtml = storeHtml({ name: s.bizname, wa: s.wa, ...palette, ...copy, products });
+  lastHtml = storeHtml({ name: s.bizname, wa: s.wa, ...palette, ...copy, frameBg, products });
   log(`  store generated: ${(lastHtml.length / 1024).toFixed(0)} KB, single self-contained file`);
   await sleep(400);
 
