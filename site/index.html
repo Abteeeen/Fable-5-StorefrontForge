@@ -5,130 +5,318 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>StorefrontForge — your store, live in 48 hours</title>
   <meta name="description" content="Send us your product photos and one sentence. Get back a live branded store with 360° product views and a ready-to-run launch ad kit.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='13' fill='%23e8ff47'/%3E%3Ccircle cx='16' cy='16' r='6' fill='%230a0a0c'/%3E%3C/svg%3E">
+  <link rel="preload" href="assets/vendor/gsap.min.js" as="script">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'">
   <style>
     :root {
-      --bg: #0e0f13;
-      --surface: #16181f;
-      --surface-2: #1d2029;
-      --text: #f2f3f7;
-      --muted: #9aa0ad;
-      --accent: #6d8dff;
-      --accent-2: #b48cff;
-      --line: rgba(255,255,255,0.08);
+      --bg: #0a0a0c;
+      --bg-2: #101014;
+      --ink: #f4f2ee;
+      --muted: #8f8f98;
+      --line: rgba(244,242,238,0.09);
+      --accent: #e8ff47;
+      --accent-ink: #101104;
+      --serif: 'Fraunces', Georgia, 'Times New Roman', serif;
+      --sans: 'Inter', system-ui, -apple-system, sans-serif;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.65; -webkit-font-smoothing: antialiased; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
     a { color: inherit; text-decoration: none; }
     img { max-width: 100%; display: block; }
-    .container { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
-    .grad { color: var(--accent); }
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 clamp(20px, 4vw, 48px); }
 
-    header { position: sticky; top: 0; z-index: 10; background: rgba(14,15,19,0.82); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
-    header .container { display: flex; align-items: center; justify-content: space-between; height: 64px; }
-    .logo { font-weight: 800; font-size: 1.15rem; letter-spacing: -0.02em; }
-    .logo span { color: var(--accent); }
-    nav a { margin-left: 26px; font-size: 0.92rem; color: var(--muted); }
-    nav a:hover { color: var(--text); }
-    .btn { display: inline-block; padding: 13px 30px; border-radius: 999px; font-weight: 700; font-size: 0.98rem; transition: transform .15s ease, box-shadow .15s ease; }
-    .btn-primary { background: var(--accent); color: #0c0d11; }
-    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(109,141,255,0.25); }
-    .btn-ghost { border: 1.5px solid var(--line); color: var(--text); }
-    nav .btn { padding: 9px 20px; margin-left: 26px; }
+    ::selection { background: var(--accent); color: var(--accent-ink); }
 
-    .hero { padding: 110px 0 90px; text-align: center;
-      background: radial-gradient(900px 420px at 50% -10%, rgba(109,141,255,0.07), transparent); }
-    .hero .eyebrow { font-size: 0.82rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); margin-bottom: 20px; }
-    .hero h1 { font-size: clamp(2.3rem, 5.6vw, 3.9rem); font-weight: 800; letter-spacing: -0.035em; line-height: 1.1; max-width: 850px; margin: 0 auto 22px; }
-    .hero p { font-size: 1.18rem; color: var(--muted); max-width: 640px; margin: 0 auto 40px; }
-    .hero .cta-row { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+    /* ---------- preloader ---------- */
+    #loader {
+      position: fixed; inset: 0; z-index: 100;
+      background: var(--bg);
+      display: flex; align-items: center; justify-content: center;
+      transition: opacity .5s ease, visibility .5s;
+    }
+    #loader.done { opacity: 0; visibility: hidden; pointer-events: none; }
+    #loader .word {
+      font-family: var(--serif); font-size: clamp(1.4rem, 3vw, 2rem);
+      letter-spacing: 0.02em; color: var(--ink); opacity: .9;
+    }
+    #loader .word em { font-style: italic; color: var(--accent); }
 
-    section { padding: 84px 0; }
-    .kicker { font-size: 0.8rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); margin-bottom: 12px; }
-    h2 { font-size: clamp(1.7rem, 3.4vw, 2.4rem); font-weight: 800; letter-spacing: -0.03em; margin-bottom: 14px; }
-    .lead { color: var(--muted); max-width: 620px; margin-bottom: 44px; }
+    /* ---------- header ---------- */
+    header {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+      transition: background .3s ease, border-color .3s ease, transform .35s ease;
+      border-bottom: 1px solid transparent;
+    }
+    header.scrolled { background: rgba(10,10,12,0.75); backdrop-filter: blur(14px); border-bottom-color: var(--line); }
+    header.hidden { transform: translateY(-100%); }
+    header .container { display: flex; align-items: center; justify-content: space-between; height: 72px; }
+    .logo { font-weight: 700; font-size: 1.05rem; letter-spacing: -0.02em; display: flex; align-items: center; gap: 10px; }
+    .logo .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--accent); }
+    nav { display: flex; align-items: center; gap: clamp(18px, 3vw, 34px); }
+    nav a { font-size: 0.86rem; color: var(--muted); font-weight: 500; transition: color .2s; }
+    nav a:hover { color: var(--ink); }
+    nav a.nav-link { display: none; }
+    @media (min-width: 760px) { nav a.nav-link { display: inline; } }
 
-    .steps { display: grid; gap: 22px; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
-    .step { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 30px 28px; }
-    .step .num { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-weight: 800; background: rgba(109,141,255,0.14); color: var(--accent); margin-bottom: 18px; }
-    .step h3 { font-size: 1.08rem; margin-bottom: 8px; }
-    .step p { color: var(--muted); font-size: 0.95rem; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 14px 28px; border-radius: 999px;
+      font-weight: 600; font-size: 0.95rem; font-family: var(--sans);
+      cursor: pointer; border: 0;
+      transition: transform .25s cubic-bezier(.2,.8,.2,1), background .2s, color .2s, border-color .2s;
+      will-change: transform;
+    }
+    .btn-solid { background: var(--accent); color: var(--accent-ink); }
+    .btn-solid:hover { transform: translateY(-2px) scale(1.02); }
+    .btn-line { border: 1px solid rgba(244,242,238,0.25); color: var(--ink); background: transparent; }
+    .btn-line:hover { border-color: var(--ink); transform: translateY(-2px); }
+    .btn .arr { transition: transform .25s ease; display: inline-block; }
+    .btn:hover .arr { transform: translateX(4px); }
+    nav .btn { padding: 10px 20px; font-size: 0.85rem; }
 
-    .demo-card { background: var(--surface); border: 1px solid var(--line); border-radius: 22px; overflow: hidden; display: grid; grid-template-columns: 1fr; }
-    @media (min-width: 880px) { .demo-card { grid-template-columns: 1.25fr 1fr; } }
-    .demo-card .shot { background: #f6f1ea; max-height: 460px; overflow: hidden; }
-    .demo-card .shot img { object-fit: cover; object-position: top; width: 100%; height: 100%; }
-    .demo-card .body { padding: 40px 38px; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: 14px; }
-    .demo-card .body p { color: var(--muted); }
-    .tag { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent-2); border: 1px solid rgba(180,140,255,0.4); padding: 3px 12px; border-radius: 999px; }
+    /* ---------- hero ---------- */
+    .hero {
+      position: relative; min-height: 100svh;
+      display: flex; flex-direction: column; justify-content: center;
+      padding: 130px 0 80px; overflow: hidden;
+    }
+    #webgl {
+      position: absolute; inset: 0; z-index: 0;
+      width: 100%; height: 100%; display: block;
+    }
+    .hero::after {
+      content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+      background: radial-gradient(ellipse 70% 55% at 50% 45%, transparent 30%, var(--bg) 100%);
+    }
+    .hero .container { position: relative; z-index: 2; }
+    .hero .eyebrow {
+      display: inline-flex; align-items: center; gap: 10px;
+      font-size: 0.76rem; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 34px;
+      border: 1px solid var(--line); padding: 9px 18px; border-radius: 999px;
+      background: rgba(16,16,20,0.5);
+    }
+    .hero .eyebrow .pulse { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); animation: pulse 2.4s infinite; }
+    @keyframes pulse { 0%,100% { opacity: 1; box-shadow: 0 0 0 0 rgba(232,255,71,.5);} 50% { opacity: .6; box-shadow: 0 0 0 7px rgba(232,255,71,0);} }
+    .hero h1 {
+      font-family: var(--serif); font-weight: 500;
+      font-size: clamp(2.7rem, 7.4vw, 6.2rem);
+      line-height: 1.04; letter-spacing: -0.02em;
+      max-width: 15ch; margin-bottom: 30px;
+    }
+    .hero h1 em { font-style: italic; color: var(--accent); }
+    .hero h1 .line { display: block; overflow: hidden; }
+    .hero h1 .line > span { display: inline-block; will-change: transform; }
+    .hero p.sub {
+      font-size: clamp(1rem, 1.4vw, 1.2rem); color: var(--muted);
+      max-width: 54ch; margin-bottom: 44px;
+    }
+    .hero .cta-row { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; }
+    .hero .scroll-hint {
+      position: absolute; bottom: 28px; left: 50%; transform: translateX(-50%);
+      z-index: 2; font-size: 0.72rem; letter-spacing: 0.2em; text-transform: uppercase;
+      color: var(--muted); display: flex; flex-direction: column; align-items: center; gap: 10px;
+    }
+    .hero .scroll-hint::after {
+      content: ''; width: 1px; height: 42px;
+      background: linear-gradient(var(--muted), transparent);
+      animation: drip 2s infinite;
+    }
+    @keyframes drip { 0% { transform: scaleY(0); transform-origin: top; } 55% { transform: scaleY(1); transform-origin: top; } 56% { transform-origin: bottom; } 100% { transform: scaleY(0); transform-origin: bottom; } }
 
-    .ads-grid { display: grid; gap: 22px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
-    .ads-grid figure { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
-    .ads-grid figcaption { padding: 14px 18px; font-size: 0.85rem; color: var(--muted); }
+    /* ---------- marquee ---------- */
+    .marquee { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); overflow: hidden; padding: 22px 0; background: var(--bg-2); }
+    .marquee .track { display: flex; width: max-content; will-change: transform; animation: scroll-marquee 30s linear infinite; }
+    @keyframes scroll-marquee { to { transform: translateX(-50%); } }
+    .marquee span {
+      font-family: var(--serif); font-size: clamp(1.05rem, 2vw, 1.5rem); font-weight: 400;
+      color: var(--muted); white-space: nowrap; padding: 0 28px;
+      display: flex; align-items: center; gap: 56px;
+    }
+    .marquee span i { font-style: normal; color: var(--accent); font-size: 0.65em; }
 
-    .includes { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); margin-top: 8px; }
-    .includes li { list-style: none; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px 20px; color: var(--muted); font-size: 0.97rem; }
-    .includes li strong { color: var(--text); display: block; margin-bottom: 2px; }
-    .includes li::before { content: '✓  '; color: var(--accent); font-weight: 800; }
+    /* ---------- shared section chrome ---------- */
+    section { padding: clamp(90px, 12vw, 160px) 0; position: relative; }
+    .kicker {
+      font-size: 0.74rem; font-weight: 600; letter-spacing: 0.24em; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 22px; display: flex; align-items: center; gap: 14px;
+    }
+    .kicker::before { content: ''; width: 34px; height: 1px; background: var(--accent); }
+    h2 {
+      font-family: var(--serif); font-weight: 500;
+      font-size: clamp(2rem, 4.6vw, 3.6rem);
+      letter-spacing: -0.02em; line-height: 1.1; margin-bottom: 20px; max-width: 20ch;
+    }
+    h2 em { font-style: italic; color: var(--accent); }
+    .lead { color: var(--muted); max-width: 56ch; font-size: clamp(0.98rem, 1.3vw, 1.12rem); margin-bottom: clamp(44px, 6vw, 72px); }
 
-    #request { background: linear-gradient(180deg, transparent, rgba(109,141,255,0.06)); }
-    .request-grid { display: grid; gap: 40px; grid-template-columns: 1fr; }
-    @media (min-width: 920px) { .request-grid { grid-template-columns: 0.9fr 1.1fr; } }
-    .request-info h2 { margin-bottom: 18px; }
-    .request-info ol { margin: 20px 0 30px 20px; color: var(--muted); }
-    .request-info ol li { margin-bottom: 10px; }
-    .request-info ol li strong { color: var(--text); }
-    .form-shell { background: var(--surface); border: 1px solid var(--line); border-radius: 22px; overflow: hidden; min-height: 620px; display: flex; flex-direction: column; }
-    .form-shell iframe { border: 0; width: 100%; flex: 1; min-height: 620px; background: #fff; }
-    .form-placeholder { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 48px 36px; text-align: center; color: var(--muted); }
-    .form-placeholder .mark { width: 52px; height: 52px; border-radius: 14px; background: rgba(109,141,255,0.14); border: 1px solid rgba(109,141,255,0.3); display: flex; align-items: center; justify-content: center; font-weight: 800; color: var(--accent); font-size: 1.3rem; }
-    .note { font-size: 0.85rem; color: var(--muted); padding: 14px 20px; border-top: 1px solid var(--line); }
+    /* ---------- steps ---------- */
+    .steps { display: grid; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 24px; overflow: hidden; }
+    @media (min-width: 860px) { .steps { grid-template-columns: repeat(3, 1fr); } }
+    .step { background: var(--bg); padding: clamp(34px, 4vw, 52px) clamp(28px, 3vw, 42px); position: relative; transition: background .35s ease; }
+    .step:hover { background: var(--bg-2); }
+    .step .num {
+      font-family: var(--serif); font-size: clamp(3.4rem, 6vw, 5rem); line-height: 1;
+      color: transparent; -webkit-text-stroke: 1px rgba(244,242,238,0.28);
+      margin-bottom: 26px; transition: color .35s ease, -webkit-text-stroke-color .35s ease;
+    }
+    .step:hover .num { color: var(--accent); -webkit-text-stroke-color: var(--accent); }
+    .step h3 { font-size: 1.15rem; font-weight: 600; margin-bottom: 12px; letter-spacing: -0.01em; }
+    .step p { color: var(--muted); font-size: 0.94rem; }
 
-    footer { border-top: 1px solid var(--line); padding: 44px 0; text-align: center; color: var(--muted); font-size: 0.9rem; }
+    /* ---------- demo showcase ---------- */
+    #demo { background: var(--bg-2); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+    .demo-wrap { display: grid; gap: clamp(36px, 5vw, 64px); align-items: center; }
+    @media (min-width: 920px) { .demo-wrap { grid-template-columns: 1.2fr 1fr; } }
+    .demo-shot {
+      border-radius: 22px; overflow: hidden; border: 1px solid var(--line);
+      box-shadow: 0 40px 90px -30px rgba(0,0,0,0.7);
+      position: relative;
+    }
+    .demo-shot img { width: 100%; height: auto; transform: scale(1.06); will-change: transform; }
+    .demo-body .tag {
+      display: inline-block; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--accent); border: 1px solid rgba(232,255,71,0.35); padding: 5px 14px; border-radius: 999px; margin-bottom: 22px;
+    }
+    .demo-body h3 { font-family: var(--serif); font-size: clamp(1.6rem, 2.6vw, 2.2rem); font-weight: 500; margin-bottom: 16px; }
+    .demo-body p { color: var(--muted); margin-bottom: 18px; font-size: 0.98rem; }
+    .demo-body p em { color: var(--ink); font-style: italic; font-family: var(--serif); }
+    .demo-stats { display: flex; gap: clamp(24px, 4vw, 48px); margin: 30px 0 34px; flex-wrap: wrap; }
+    .demo-stats .stat .val { font-family: var(--serif); font-size: clamp(1.7rem, 3vw, 2.4rem); color: var(--ink); line-height: 1.1; }
+    .demo-stats .stat .lbl { font-size: 0.76rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-top: 6px; }
+
+    /* ---------- ad kit ---------- */
+    .ads-grid { display: grid; gap: 22px; }
+    @media (min-width: 720px) { .ads-grid { grid-template-columns: 1fr 1fr; } }
+    .ads-grid figure {
+      border-radius: 20px; overflow: hidden; border: 1px solid var(--line); background: var(--bg-2);
+      transition: transform .4s cubic-bezier(.2,.8,.2,1), border-color .3s;
+    }
+    .ads-grid figure:hover { transform: translateY(-6px); border-color: rgba(244,242,238,0.22); }
+    .ads-grid figure .im { overflow: hidden; }
+    .ads-grid img { transition: transform .6s cubic-bezier(.2,.8,.2,1); }
+    .ads-grid figure:hover img { transform: scale(1.03); }
+    .ads-grid figcaption { padding: 16px 22px; font-size: 0.85rem; color: var(--muted); display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    .ads-grid figcaption b { color: var(--ink); font-weight: 600; }
+
+    /* ---------- deliverables list ---------- */
+    .deliver { margin-top: clamp(70px, 9vw, 110px); }
+    .deliver-list { border-top: 1px solid var(--line); }
+    .deliver-item {
+      display: grid; grid-template-columns: auto 1fr; gap: 6px clamp(20px, 4vw, 48px);
+      align-items: baseline; padding: clamp(22px, 3vw, 34px) 8px;
+      border-bottom: 1px solid var(--line); transition: background .3s, padding-left .3s;
+    }
+    @media (min-width: 720px) { .deliver-item { grid-template-columns: 64px 1fr 1.2fr; } }
+    .deliver-item:hover { background: rgba(244,242,238,0.02); padding-left: 18px; }
+    .deliver-item .idx { font-size: 0.8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+    .deliver-item .name { font-family: var(--serif); font-size: clamp(1.15rem, 2.2vw, 1.6rem); font-weight: 500; }
+    .deliver-item .desc { color: var(--muted); font-size: 0.93rem; }
+    @media (max-width: 719px) { .deliver-item .desc { grid-column: 2; } }
+
+    /* ---------- big CTA ---------- */
+    #request { overflow: hidden; }
+    .cta-inner { text-align: center; position: relative; }
+    .cta-inner h2 { max-width: none; margin-left: auto; margin-right: auto; font-size: clamp(2.4rem, 6.4vw, 5.2rem); }
+    .cta-inner .lead { margin-left: auto; margin-right: auto; }
+    .cta-steps {
+      display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
+      margin-bottom: 46px; color: var(--muted); font-size: 0.9rem;
+    }
+    .cta-steps span { border: 1px solid var(--line); border-radius: 999px; padding: 9px 20px; background: var(--bg-2); }
+    .cta-steps span b { color: var(--ink); font-weight: 600; }
+    .cta-row-big { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+    .cta-note { margin-top: 26px; font-size: 0.85rem; color: var(--muted); }
+
+    /* ---------- footer ---------- */
+    footer { border-top: 1px solid var(--line); padding: clamp(50px, 7vw, 90px) 0 40px; overflow: hidden; }
+    .foot-word {
+      font-family: var(--serif); font-weight: 500; white-space: nowrap;
+      font-size: clamp(3.4rem, 12.5vw, 11rem); line-height: 1; letter-spacing: -0.03em;
+      color: transparent; -webkit-text-stroke: 1px rgba(244,242,238,0.16);
+      text-align: center; user-select: none; margin-bottom: clamp(36px, 5vw, 60px);
+    }
+    .foot-word em { font-style: italic; -webkit-text-stroke-color: rgba(232,255,71,0.4); }
+    .foot-row { display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap; color: var(--muted); font-size: 0.85rem; }
+    .foot-row a:hover { color: var(--ink); }
+
+    /* reveal helpers — hidden only once GSAP is confirmed running */
+    .gsap-on .rv { opacity: 0; transform: translateY(36px); }
+
+    @media (prefers-reduced-motion: reduce) {
+      .marquee .track { animation: none; }
+      .hero .scroll-hint::after, .hero .eyebrow .pulse { animation: none; }
+    }
   </style>
 </head>
 <body>
-  <header>
+
+  <div id="loader" aria-hidden="true"><div class="word">Storefront<em>Forge</em></div></div>
+
+  <header id="hdr">
     <div class="container">
-      <a class="logo" href="#">Storefront<span>Forge</span></a>
+      <a class="logo" href="#"><span class="dot"></span>Storefront<span style="color:var(--muted)">Forge</span></a>
       <nav>
-        <a href="#how">How it works</a>
-        <a href="#demo">Live demo</a>
-        <a href="#ads">Ad kit</a>
-        <a class="btn btn-primary" href="#request">Get your store</a>
+        <a class="nav-link" href="#how">How it works</a>
+        <a class="nav-link" href="#demo">Live demo</a>
+        <a class="nav-link" href="#ads">Ad kit</a>
+        <a class="btn btn-solid" href="#request">Get your store</a>
       </nav>
     </div>
   </header>
 
   <section class="hero">
+    <canvas id="webgl" aria-hidden="true"></canvas>
     <div class="container">
-      <div class="eyebrow">For small businesses that sell real products</div>
-      <h1>Send product photos and one sentence.<br>Get a <span class="grad">live store with 360° views</span> — in 48 hours.</h1>
-      <p>No agency meetings, no website builder homework. You describe your business in a single sentence, we forge the rest: a branded storefront, interactive 360° product viewers, and a ready-to-post launch ad kit.</p>
-      <div class="cta-row">
-        <a class="btn btn-primary" href="console/">Try it out now →</a>
-        <a class="btn btn-ghost" href="demo/">See a live example</a>
+      <div class="eyebrow rv"><span class="pulse"></span>For small businesses that sell real products</div>
+      <h1 id="hero-h">
+        <span class="line"><span>Photos and one</span></span>
+        <span class="line"><span>sentence in. A <em>live</em></span></span>
+        <span class="line"><span><em>store</em> out — in 48h.</span></span>
+      </h1>
+      <p class="sub rv">No agency meetings. No website-builder homework. Describe your business in a single sentence — we forge the brand, the copy, the interactive 360° product viewers, and a launch ad kit.</p>
+      <div class="cta-row rv">
+        <a class="btn btn-solid" href="console/">Try it now <span class="arr">→</span></a>
+        <a class="btn btn-line" href="demo/">See a live store</a>
       </div>
     </div>
+    <div class="scroll-hint">Scroll</div>
   </section>
+
+  <div class="marquee" aria-hidden="true">
+    <div class="track">
+      <span>Branded storefronts <i>✦</i> 360° product viewers <i>✦</i> Launch ad kits <i>✦</i> WhatsApp ordering <i>✦</i> Live in 48 hours <i>✦</i></span>
+      <span>Branded storefronts <i>✦</i> 360° product viewers <i>✦</i> Launch ad kits <i>✦</i> WhatsApp ordering <i>✦</i> Live in 48 hours <i>✦</i></span>
+    </div>
+  </div>
 
   <section id="how">
     <div class="container">
-      <div class="kicker">How it works</div>
-      <h2>Three steps. You only do the first one.</h2>
-      <p class="lead">The whole process runs on our production pipeline — you never touch a website builder.</p>
+      <div class="kicker rv">How it works</div>
+      <h2 class="rv">Three steps. You only <em>do the first</em> one.</h2>
+      <p class="lead rv">The whole process runs on our production pipeline — you never touch a website builder.</p>
       <div class="steps">
-        <div class="step">
-          <div class="num">1</div>
+        <div class="step rv">
+          <div class="num">01</div>
           <h3>You submit</h3>
           <p>Product photos (or a 10-second video of each product slowly rotating on a table), one sentence about your business, and your WhatsApp number. That's the entire brief.</p>
         </div>
-        <div class="step">
-          <div class="num">2</div>
+        <div class="step rv">
+          <div class="num">02</div>
           <h3>We forge</h3>
           <p>Our pipeline designs your brand, writes your copy, builds interactive 360° viewers from your photos, and assembles the store. You approve a preview link before anything goes public.</p>
         </div>
-        <div class="step">
-          <div class="num">3</div>
+        <div class="step rv">
+          <div class="num">03</div>
           <h3>You launch</h3>
           <p>Your store goes live at its own URL with order buttons wired to your WhatsApp — plus a launch ad kit: scored, ready-to-post creatives for Instagram and stories.</p>
         </div>
@@ -138,17 +326,23 @@
 
   <section id="demo">
     <div class="container">
-      <div class="kicker">Proof, not promises</div>
-      <h2>A store forged by this exact pipeline</h2>
-      <p class="lead">Aurora Ceramics went from three product photos and one sentence to this — drag the products to spin them.</p>
-      <div class="demo-card">
-        <a class="shot" href="demo/"><img src="assets/demo-home.png" alt="Aurora Ceramics demo store homepage"></a>
-        <div class="body">
-          <span class="tag">Live demo</span>
-          <h3 style="font-size:1.4rem">Aurora Ceramics</h3>
-          <p>Brief we received: <em>"Small-batch handmade stoneware from a home studio; warm, earthy, modern; sells mugs, vases and bowls; orders via WhatsApp."</em></p>
-          <p>Delivered: branded storefront · 3 products with drag-to-rotate 360° viewers · WhatsApp ordering · 12-creative launch ad kit.</p>
-          <a class="btn btn-primary" href="demo/">Open the live store →</a>
+      <div class="kicker rv">Proof, not promises</div>
+      <h2 class="rv">A store forged by <em>this exact</em> pipeline</h2>
+      <p class="lead rv">Aurora Ceramics went from three product photos and one sentence to this — open it and drag the products to spin them.</p>
+      <div class="demo-wrap">
+        <a class="demo-shot rv" href="demo/">
+          <img id="demo-img" src="assets/demo-home.png" alt="Aurora Ceramics demo store homepage">
+        </a>
+        <div class="demo-body">
+          <span class="tag rv">Live demo</span>
+          <h3 class="rv">Aurora Ceramics</h3>
+          <p class="rv">The brief we received: <em>"Small-batch handmade stoneware from a home studio; warm, earthy, modern; sells mugs, vases and bowls; orders via WhatsApp."</em></p>
+          <div class="demo-stats rv">
+            <div class="stat"><div class="val" data-count="1">1</div><div class="lbl">Sentence in</div></div>
+            <div class="stat"><div class="val" data-count="3">3</div><div class="lbl">Products, 360°</div></div>
+            <div class="stat"><div class="val" data-count="12">12</div><div class="lbl">Ad creatives</div></div>
+          </div>
+          <a class="btn btn-line rv" href="demo/">Open the live store <span class="arr">→</span></a>
         </div>
       </div>
     </div>
@@ -156,61 +350,222 @@
 
   <section id="ads">
     <div class="container">
-      <div class="kicker">Included with every store</div>
-      <h2>The launch ad kit</h2>
-      <p class="lead">Every store ships with feed and story creatives built from your real products — scored and ranked, so you post the strongest ones first.</p>
+      <div class="kicker rv">Included with every store</div>
+      <h2 class="rv">The launch <em>ad kit</em></h2>
+      <p class="lead rv">Every store ships with feed and story creatives built from your real products — scored and ranked, so you post the strongest ones first.</p>
       <div class="ads-grid">
-        <figure><img src="assets/ad-sample-1.png" alt="Sample feed ad creative"><figcaption>Feed creative · 1080×1080 · product-forward layout</figcaption></figure>
-        <figure><img src="assets/ad-sample-2.png" alt="Sample bold ad creative"><figcaption>Feed creative · 1080×1080 · bold brand layout</figcaption></figure>
+        <figure class="rv"><div class="im"><img src="assets/ad-sample-1.png" alt="Sample feed ad creative"></div><figcaption><b>Feed creative</b><span>1080×1080 · product-forward</span></figcaption></figure>
+        <figure class="rv"><div class="im"><img src="assets/ad-sample-2.png" alt="Sample bold ad creative"></div><figcaption><b>Feed creative</b><span>1080×1080 · bold brand</span></figcaption></figure>
       </div>
-      <div style="margin-top:56px">
-        <h2 style="font-size:1.5rem">What you get</h2>
-        <ul class="includes">
-          <li><strong>Live branded storefront</strong> at its own URL, mobile-first, fast</li>
-          <li><strong>360° product viewers</strong> — drag to rotate, built from your photos</li>
-          <li><strong>Copy & brand design</strong> — headline, story, palette, typography</li>
-          <li><strong>WhatsApp ordering</strong> — no checkout setup, orders come to you</li>
-          <li><strong>Launch ad kit</strong> — square + story creatives, scored & ranked</li>
-          <li><strong>Free updates window</strong> — tweaks to copy and products after launch</li>
-        </ul>
+
+      <div class="deliver">
+        <div class="kicker rv">What you get</div>
+        <h2 class="rv">Everything a launch needs</h2>
+        <div class="deliver-list" style="margin-top: clamp(36px, 5vw, 56px)">
+          <div class="deliver-item rv"><span class="idx">01</span><span class="name">Live branded storefront</span><span class="desc">At its own URL — mobile-first, fast, yours to keep.</span></div>
+          <div class="deliver-item rv"><span class="idx">02</span><span class="name">360° product viewers</span><span class="desc">Drag to rotate — built from your photos or a short turntable video.</span></div>
+          <div class="deliver-item rv"><span class="idx">03</span><span class="name">Copy &amp; brand design</span><span class="desc">Headline, story, palette, typography — derived from your one sentence.</span></div>
+          <div class="deliver-item rv"><span class="idx">04</span><span class="name">WhatsApp ordering</span><span class="desc">No checkout setup. Orders come straight to you.</span></div>
+          <div class="deliver-item rv"><span class="idx">05</span><span class="name">Launch ad kit</span><span class="desc">Square + story creatives, scored and ranked before you post.</span></div>
+          <div class="deliver-item rv"><span class="idx">06</span><span class="name">Free updates window</span><span class="desc">Tweaks to copy and products after launch, on us.</span></div>
+        </div>
       </div>
     </div>
   </section>
 
   <section id="request">
     <div class="container">
-      <div class="request-grid">
-        <div class="request-info">
-          <div class="kicker">Get your store</div>
-          <h2>Submit your request</h2>
-          <p style="color:var(--muted)">Have these three things ready — the form takes about five minutes:</p>
-          <ol>
-            <li><strong>One sentence</strong> about your business — what you sell, the vibe, how you take orders.</li>
-            <li><strong>Product photos</strong> — clear shots on a plain background. For the 360° effect, add a short video of each product slowly rotating on a table (a lazy susan or even a slow hand-turn works).</li>
-            <li><strong>Your WhatsApp number</strong> — where order buttons should point, and where we send your preview link.</li>
-          </ol>
-          <p style="color:var(--muted)">We reply with a preview link. Nothing goes live until you approve it.</p>
+      <div class="cta-inner">
+        <div class="kicker rv" style="justify-content:center">Get your store</div>
+        <h2 class="rv">Ready when <em>you</em> are.</h2>
+        <p class="lead rv">Have three things ready — it takes about five minutes.</p>
+        <div class="cta-steps rv">
+          <span><b>1.</b> One sentence about your business</span>
+          <span><b>2.</b> Product photos or a short spin video</span>
+          <span><b>3.</b> Your WhatsApp number</span>
         </div>
-        <div class="form-shell">
-          <!-- INTAKE FORM: replace the placeholder below with your Google Form embed.
-               1. Create the form (fields are listed in forge.md → "Intake form fields")
-               2. Google Forms → Send → < > embed → copy the iframe src
-               3. Delete the .form-placeholder div and uncomment the iframe. -->
-          <!-- <iframe src="GOOGLE_FORM_EMBED_URL_HERE" title="StorefrontForge request form"></iframe> -->
-          <div class="form-placeholder">
-            <div class="mark">SF</div>
-            <h3>Request form opening soon</h3>
-            <p>We're onboarding our first stores in small batches.<br>Reach us directly and we'll take your brief personally:</p>
-            <a class="btn btn-primary" href="https://wa.me/0000000000?text=Hi%20StorefrontForge!%20I%20want%20a%20store.%20Here%27s%20my%20one%20sentence%3A%20">Send your brief on WhatsApp</a>
-          </div>
-          <div class="note">Photos are used only to build your store. Your store is yours — we hand over everything.</div>
+        <div class="cta-row-big rv">
+          <a class="btn btn-solid" href="https://wa.me/0000000000?text=Hi%20StorefrontForge!%20I%20want%20a%20store.%20Here%27s%20my%20one%20sentence%3A%20">Send your brief on WhatsApp <span class="arr">→</span></a>
+          <a class="btn btn-line" href="console/">Or try the forge yourself</a>
         </div>
+        <p class="cta-note rv">We reply with a preview link. Nothing goes live until you approve it. Your store is yours — we hand over everything.</p>
       </div>
     </div>
   </section>
 
   <footer>
-    <div class="container">© 2026 StorefrontForge · Stores forged from photos and a sentence. · <a href="console/" style="opacity:.5">Operator console</a></div>
+    <div class="foot-word" aria-hidden="true">Storefront<em>Forge</em></div>
+    <div class="container">
+      <div class="foot-row">
+        <span>© 2026 StorefrontForge · Stores forged from photos and a sentence.</span>
+        <a href="console/">Operator console</a>
+      </div>
+    </div>
   </footer>
+
+  <script src="assets/vendor/gsap.min.js"></script>
+  <script src="assets/vendor/ScrollTrigger.min.js"></script>
+  <script type="module">
+    /* ============ three.js particle field (hero) ============ */
+    const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const isMobile = matchMedia('(max-width: 760px)').matches;
+
+    async function initWebGL() {
+      if (reduceMotion) return;
+      let THREE;
+      try { THREE = await import('./assets/vendor/three.module.min.js'); }
+      catch { return; } // page works fine without the background
+      const canvas = document.getElementById('webgl');
+      let renderer;
+      try {
+        renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: false, powerPreference: 'low-power' });
+      } catch { return; } // no WebGL — static page still works
+      renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 60);
+      camera.position.z = 9;
+
+      // particle "forge ring" — a slow-orbiting torus of points
+      const COUNT = isMobile ? 1400 : 3200;
+      const pos = new Float32Array(COUNT * 3);
+      const seed = new Float32Array(COUNT);
+      for (let i = 0; i < COUNT; i++) {
+        const u = Math.random() * Math.PI * 2;
+        const v = Math.random() * Math.PI * 2;
+        const R = 4.4 + (Math.random() - 0.5) * 1.4;
+        const r = 1.15 * Math.sqrt(Math.random());
+        pos[i * 3]     = (R + r * Math.cos(v)) * Math.cos(u);
+        pos[i * 3 + 1] = r * Math.sin(v) * 1.6;
+        pos[i * 3 + 2] = (R + r * Math.cos(v)) * Math.sin(u);
+        seed[i] = Math.random();
+      }
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      geo.setAttribute('aSeed', new THREE.BufferAttribute(seed, 1));
+
+      const mat = new THREE.ShaderMaterial({
+        transparent: true,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+        uniforms: { uTime: { value: 0 }, uPx: { value: renderer.getPixelRatio() } },
+        vertexShader: `
+          attribute float aSeed;
+          uniform float uTime; uniform float uPx;
+          varying float vA;
+          void main() {
+            vec3 p = position;
+            float t = uTime * 0.12;
+            float c = cos(t), s = sin(t);
+            p = vec3(p.x * c - p.z * s, p.y, p.x * s + p.z * c);   // slow orbit
+            p.y += sin(uTime * 0.7 + aSeed * 6.2831) * 0.22;       // breathing
+            vec4 mv = modelViewMatrix * vec4(p, 1.0);
+            gl_Position = projectionMatrix * mv;
+            float tw = 0.55 + 0.45 * sin(uTime * 1.4 + aSeed * 40.0);
+            vA = tw * smoothstep(14.0, 6.0, -mv.z);
+            gl_PointSize = (aSeed * 2.2 + 0.8) * uPx * (9.0 / -mv.z);
+          }`,
+        fragmentShader: `
+          varying float vA;
+          void main() {
+            float d = length(gl_PointCoord - 0.5);
+            if (d > 0.5) discard;
+            float glow = smoothstep(0.5, 0.0, d);
+            vec3 col = mix(vec3(0.55, 0.58, 0.62), vec3(0.91, 1.0, 0.28), step(0.82, vA));
+            gl_FragColor = vec4(col, glow * vA * 0.85);
+          }`,
+      });
+      const points = new THREE.Points(geo, mat);
+      points.rotation.x = 0.55;
+      scene.add(points);
+
+      let mx = 0, my = 0;
+      if (!isMobile) addEventListener('pointermove', (e) => {
+        mx = (e.clientX / innerWidth - 0.5);
+        my = (e.clientY / innerHeight - 0.5);
+      }, { passive: true });
+
+      const hero = document.querySelector('.hero');
+      function resize() {
+        const w = hero.clientWidth, h = hero.clientHeight;
+        renderer.setSize(w, h, false);
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+      }
+      resize();
+      addEventListener('resize', resize);
+
+      const clock = new THREE.Clock();
+      let visible = true;
+      new IntersectionObserver(([e]) => { visible = e.isIntersecting; }, { threshold: 0 }).observe(canvas);
+      renderer.setAnimationLoop(() => {
+        if (!visible) return;
+        mat.uniforms.uTime.value = clock.getElapsedTime();
+        points.rotation.y += ((mx * 0.4) - points.rotation.y) * 0.03;
+        points.rotation.x += ((0.55 + my * 0.25) - points.rotation.x) * 0.03;
+        renderer.render(scene, camera);
+      });
+    }
+    initWebGL();
+
+    /* ============ GSAP choreography ============ */
+    const hasGsap = typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined';
+    if (hasGsap && !reduceMotion) {
+      document.documentElement.classList.add('gsap-on');
+      gsap.registerPlugin(ScrollTrigger);
+
+      // intro: loader out, hero lines up
+      gsap.timeline()
+        .to('#loader', { opacity: 0, duration: 0.5, delay: 0.55, onComplete: () => document.getElementById('loader').classList.add('done') })
+        .from('#hero-h .line > span', { yPercent: 110, duration: 1.0, ease: 'power4.out', stagger: 0.09 }, '-=0.15')
+        .to('.hero .rv', { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out', stagger: 0.1 }, '-=0.6');
+
+      // scroll reveals for everything else
+      document.querySelectorAll('section:not(.hero) .rv, footer .rv').forEach((el) => {
+        gsap.to(el, {
+          opacity: 1, y: 0, duration: 0.9, ease: 'power3.out',
+          scrollTrigger: { trigger: el, start: 'top 88%', once: true },
+        });
+      });
+
+      // demo screenshot: subtle parallax inside its frame
+      gsap.to('#demo-img', {
+        yPercent: -6, ease: 'none',
+        scrollTrigger: { trigger: '.demo-shot', start: 'top bottom', end: 'bottom top', scrub: true },
+      });
+
+      // stat counters
+      document.querySelectorAll('.demo-stats .val').forEach((el) => {
+        const end = +el.dataset.count;
+        const o = { v: 0 };
+        gsap.to(o, {
+          v: end, duration: 1.4, ease: 'power2.out',
+          onUpdate: () => { el.textContent = Math.round(o.v); },
+          scrollTrigger: { trigger: el, start: 'top 90%', once: true },
+        });
+      });
+
+      // hero content drifts up slightly as you scroll past
+      gsap.to('.hero .container', {
+        yPercent: -12, opacity: 0.25, ease: 'none',
+        scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: true },
+      });
+    } else {
+      document.getElementById('loader').classList.add('done');
+    }
+
+    /* ============ header behaviour ============ */
+    const hdr = document.getElementById('hdr');
+    let lastY = 0;
+    addEventListener('scroll', () => {
+      const y = scrollY;
+      hdr.classList.toggle('scrolled', y > 20);
+      hdr.classList.toggle('hidden', y > 420 && y > lastY);
+      lastY = y;
+    }, { passive: true });
+
+    /* safety: never leave the loader up */
+    setTimeout(() => document.getElementById('loader').classList.add('done'), 2500);
+  </script>
 </body>
 </html>

@@ -37,9 +37,17 @@ intake/<store>/
 
 ## Main frontend (the business's own site)
 
-`site/` is the public StorefrontForge landing page — offer, live demo (served at `/demo/`),
-ad-kit samples, and the client intake section. The Pages workflow assembles
-`dist/ = site/ + demo build at /demo/` on every push.
+`site/` is the public StorefrontForge landing page — WebGL particle hero (three.js),
+GSAP scroll choreography, offer, live demo (served at `/demo/`), ad-kit samples, and the
+client CTA section. GSAP + three.js are vendored in `site/assets/vendor/` (CDNs are
+blocked in the sandbox, and vendoring keeps Pages self-contained). The Pages workflow
+assembles `dist/ = site/ + demo build at /demo/` on every push.
+
+- QA: `node forge/test-landing.mjs` — desktop + mobile viewports, console errors, WebGL,
+  scroll reveals, horizontal-overflow check; screenshots → `qa/landing-*.png`.
+- Motion degrades gracefully: `prefers-reduced-motion` disables WebGL + animations, and
+  if scripts fail to load the page renders fully static (reveal classes only hide content
+  once GSAP is confirmed running).
 
 ### Intake form fields (create as a Google Form, then embed)
 
