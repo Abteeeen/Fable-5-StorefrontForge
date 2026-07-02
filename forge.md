@@ -24,6 +24,8 @@ intake/<store>/
    drafts `store.json` from `brief.txt` with a cheap model. **Review before building** —
    cheap models draft, a human (or stronger model) approves. Write `product.json` per product.
 3. **Build.** `node forge/build.mjs intake/<store> dist` — full static site in `dist/`.
+   Premium editorial template (`template/assets/store.css`) with GSAP scroll motion
+   (`template/assets/site-motion.js`, vendored `template/assets/vendor/`) — no CDN dependency.
 4. **QA.** `node forge/preview.mjs` — serves `dist/` and screenshots home + product page to `qa/`.
 5. **Ads.** `node forge/render-ads.mjs intake/<store> launch-kit` — 4 creatives per product
    (clean/bold × square/story), rendered from the store's real product imagery. $0.
@@ -78,11 +80,40 @@ Nothing is uploaded anywhere — it runs entirely in the visitor's browser, so i
 works on GitHub Pages. Production differences are labeled in the log (AI copywriter, ad kit,
 scoring, public deploy).
 
-- Gate: SHA-256 hash comparison in `site/console/index.html` (`PASS_HASH`). To change the
-  passcode: `node -e "crypto.subtle.digest('SHA-256', new TextEncoder().encode('NEW-CODE')).then(b => console.log([...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')))"`
-  and replace the constant. This is demo-grade privacy (keeps casual visitors out), not
-  security — anyone determined can read the client JS.
-- E2E test: `node forge/test-console.mjs` (unlock → intake → forge → verifies spin canvas).
+The store the console forges is a **single self-contained downloadable HTML file** — this is
+the current deliverable clients receive (no hosting pipeline is wired up yet; see "Downloaded
+store vs. hosted store" below). It carries the same premium editorial design and GSAP scroll
+motion as the production template, and GSAP + ScrollTrigger are baked in so the file works
+fully offline once downloaded — no CDN call, nothing breaks if opened with no network.
+
+- **`site/console/index.html` is a generated file** — edit `forge/console-template.html`
+  instead, then run `node forge/build-console.mjs` to rebuild it. The template contains two
+  placeholders (`__GSAP_SOURCE__`, `__SCROLLTRIGGER_SOURCE__`) inside inert
+  `<script type="text/plain">` blocks near the top of `<body>`; the build script splices in
+  the real vendored library source from `template/assets/vendor/`. `storeHtml()` then reads
+  that source via `.textContent` (DOM read, not a JS string literal) and interpolates it into
+  the generated store's `<script>` tags — reading through the DOM this way preserves every
+  backslash exactly. **Do not** splice raw library text directly into a JS template literal's
+  source code: the browser's own escape-sequence parsing runs before any of our code does,
+  which silently corrupts patterns like `\d` into `d` inside the library (this was a real bug,
+  caught by `forge/test-console.mjs`'s offline pageerror check).
+- Gate: SHA-256 hash comparison in `forge/console-template.html` (`PASS_HASH`). To change the
+  passcode: `node -e "crypto.subtle.digest('SHA-256', new TextEncoder().encode('NEW-CODE')).then(b => console.log([...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')))"`,
+  replace the constant, then rebuild with `node forge/build-console.mjs`. This is demo-grade
+  privacy (keeps casual visitors out), not security — anyone determined can read the client JS.
+- E2E test: `node forge/test-console.mjs` — unlock → intake → forge → verifies the live
+  preview's GSAP motion ran, downloads the store to disk, then opens the **downloaded file**
+  in a fresh browser context with all non-`file://` network requests blocked, to prove it
+  really works standalone offline (GSAP, ScrollTrigger, spin viewer, scroll reveals).
+
+### Downloaded store vs. hosted store
+
+Today the console (and thus this whole client-facing flow) produces a downloadable file, not
+a URL — see the "realistic cases" discussion: nothing is hosted per-client, there's no
+persistence, and a client can only receive the store by being sent the file directly (email,
+WhatsApp, AirDrop). This is intentional for now (staying lean pre-revenue) — the fulfillment
+pipeline (real hosted URL per client) is deliberately deferred until there's paying-client
+volume to justify it. See the "v2 backlog" section below.
 
 ## Demo assets
 

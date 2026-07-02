@@ -65,6 +65,73 @@ const h1 = await inner.textContent('h1');
 const hasCanvas = await inner.$('.viewer.spin canvas') !== null;
 console.log(`preview headline: "${h1.trim()}" · spin canvas: ${hasCanvas ? '✓' : 'MISSING'}`);
 
+// verify GSAP animation actually ran inside the live preview iframe
+await inner.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+await page.waitForTimeout(900);
+const previewMotion = await inner.evaluate(() => ({
+  motionOn: document.documentElement.classList.contains('motion-on'),
+  revealsVisible: [...document.querySelectorAll('[data-reveal]')].every((el) => +getComputedStyle(el).opacity > 0.9),
+}));
+console.log(`preview motion: gsap active=${previewMotion.motionOn}, reveals visible after scroll=${previewMotion.revealsVisible}`);
+
+// download the forged store to disk
+const downloadPromise = page.waitForEvent('download');
+await page.click('#download');
+const download = await downloadPromise;
+const downloadedPath = path.join(outDir, 'my-forged-store.html');
+await download.saveAs(downloadedPath);
+const sizeKB = (fs.statSync(downloadedPath).size / 1024).toFixed(0);
+console.log(`downloaded ✓ (${sizeKB} KB) → ${downloadedPath}`);
+
 await browser.close();
 server.close();
+
+// ---- open the DOWNLOADED file standalone, offline, in a fresh browser with
+//      networking blocked entirely — this is what a client actually receives.
+const offlineBrowser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || '/opt/pw-browsers/chromium' });
+const offlineCtx = await offlineBrowser.newContext({ viewport: { width: 1360, height: 950 } });
+await offlineCtx.route('**/*', (route) => {
+  if (route.request().url().startsWith('file://')) return route.continue();
+  console.log('BLOCKED NETWORK REQUEST (should never happen offline):', route.request().url());
+  route.abort();
+});
+const offlinePage = await offlineCtx.newPage();
+// fonts.googleapis.com is expected to fail with no network — the page is
+// designed to degrade gracefully to system fonts (media="print" onload trick).
+const offlineErrors = [];
+offlinePage.on('pageerror', (e) => offlineErrors.push(String(e)));
+offlinePage.on('console', (m) => {
+  if (m.type() !== 'error') return;
+  if ((m.location().url || '').includes('fonts.googleapis')) return;
+  offlineErrors.push(m.text());
+});
+
+await offlinePage.goto(`file://${downloadedPath}`, { waitUntil: 'load' });
+await offlinePage.waitForTimeout(1500);
+const offlineState = await offlinePage.evaluate(() => ({
+  title: document.title,
+  hasGsap: typeof window.gsap !== 'undefined',
+  hasScrollTrigger: typeof window.ScrollTrigger !== 'undefined',
+  motionOn: document.documentElement.classList.contains('motion-on'),
+  hasSpinCanvas: !!document.querySelector('.viewer.spin canvas'),
+}));
+console.log(`OFFLINE FILE :// TEST — title:"${offlineState.title}" gsap:${offlineState.hasGsap} scrollTrigger:${offlineState.hasScrollTrigger} motion-on:${offlineState.motionOn} spin-canvas:${offlineState.hasSpinCanvas}`);
+await offlinePage.screenshot({ path: path.join(outDir, '3-offline-file-hero.png') });
+
+await offlinePage.evaluate(() => document.querySelector('main section:last-of-type')?.scrollIntoView());
+await offlinePage.waitForTimeout(900);
+const offlineReveals = await offlinePage.evaluate(() =>
+  [...document.querySelectorAll('[data-reveal]')].every((el) => +getComputedStyle(el).opacity > 0.9));
+console.log(`offline reveals visible after scroll: ${offlineReveals}`);
+await offlinePage.screenshot({ path: path.join(outDir, '4-offline-file-scrolled.png') });
+
+console.log(`offline console/page errors: ${offlineErrors.length ? offlineErrors.join(' | ') : 'none'}`);
+await offlineBrowser.close();
+
 console.log(`screenshots → ${outDir}`);
+
+const ok = hasCanvas && previewMotion.motionOn && previewMotion.revealsVisible
+  && offlineState.hasGsap && offlineState.hasScrollTrigger && offlineState.motionOn && offlineState.hasSpinCanvas
+  && offlineReveals && offlineErrors.length === 0;
+console.log(ok ? 'PASS' : 'FAIL');
+process.exit(ok ? 0 : 1);

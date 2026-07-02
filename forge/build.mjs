@@ -56,6 +56,10 @@ const fontLink = store.fonts?.googleFonts
   <link href="https://fonts.googleapis.com/css2?${store.fonts.googleFonts}&display=swap" rel="stylesheet">`
   : '';
 
+const marqueeItems = products.length
+  ? Array(6).fill(products.map((p) => esc(p.name)).join(' <i>&#10022;</i> ')).join(' <i>&#10022;</i> ')
+  : '';
+
 function page({ title, description, body, depth = 0 }) {
   const rel = depth === 0 ? '.' : Array(depth).fill('..').join('/');
   return `<!DOCTYPE html>
@@ -75,25 +79,30 @@ function page({ title, description, body, depth = 0 }) {
       <a class="brand-mark" href="${rel}/index.html">${store.brandMarkHtml || esc(store.name)}</a>
       <nav class="nav">
         <a href="${rel}/index.html#products">Products</a>
-        <a href="${esc(store.orderLink)}">Order</a>
+        <a class="order-link" href="${esc(store.orderLink)}">Order</a>
       </nav>
     </div>
   </header>
+  ${marqueeItems ? `<div class="marquee"><div class="track"><span>${marqueeItems}</span></div></div>` : ''}
   ${body}
   <footer class="site-footer">
-    <div class="container">© ${new Date().getFullYear()} ${esc(store.name)} · ${esc(store.footerNote || '')}</div>
+    <div class="footer-word">${esc(store.name)}</div>
+    <div class="container footer-note">© ${new Date().getFullYear()} ${esc(store.name)} · ${esc(store.footerNote || '')}</div>
   </footer>
+  <script src="${rel}/assets/vendor/gsap.min.js"></script>
+  <script src="${rel}/assets/vendor/ScrollTrigger.min.js"></script>
   <script src="${rel}/assets/spin-viewer.js"></script>
+  <script src="${rel}/assets/site-motion.js"></script>
 </body>
 </html>`;
 }
 
-function productCard(p) {
+function productCard(p, i) {
   const thumb = p.frames.length
     ? `products/${p.slug}/spin/${p.frames[0]}`
     : `products/${p.slug}/photo.png`;
   return `
-      <a class="product-card" href="products/${p.slug}/index.html">
+      <a class="product-card" data-reveal href="products/${p.slug}/index.html">
         <div class="thumb"><img src="${thumb}" alt="${esc(p.name)}" loading="lazy"></div>
         <div class="card-body">
           ${p.frames.length ? '<span class="spin-badge">360° view</span>' : ''}
@@ -106,17 +115,21 @@ function productCard(p) {
 const indexBody = `
   <section class="hero">
     <div class="container">
+      <div class="kicker">${esc(store.name)}</div>
       <h1>${esc(store.headline)}</h1>
       <p class="tagline">${esc(store.tagline)}</p>
       <a class="cta-button" href="#products">Browse the collection</a>
     </div>
   </section>
   <main class="container" id="products">
-    <h2 class="section-title">The collection</h2>
+    <div class="section-head" data-reveal>
+      <div class="eyebrow">The collection</div>
+      <h2 class="section-title">${products.length} piece${products.length === 1 ? '' : 's'}, made to order</h2>
+    </div>
     <div class="product-grid">${products.map(productCard).join('\n')}</div>
   </main>`;
 
-function productBody(p) {
+function productBody(p, i) {
   const spin = p.frames.length
     ? `<div class="spin-viewer" data-frames="spin/frame_%d.png" data-count="${p.frames.length}" aria-label="360 degree view of ${esc(p.name)}"></div>`
     : `<div class="spin-viewer"><img src="photo.png" alt="${esc(p.name)}"></div>`;
@@ -124,8 +137,9 @@ function productBody(p) {
   return `
   <main class="container">
     <div class="product-layout">
-      ${spin}
-      <div class="product-info">
+      <div data-reveal>${spin}</div>
+      <div class="product-info" data-reveal>
+        <div class="idx">${String(i + 1).padStart(2, '0')} / ${String(products.length).padStart(2, '0')}</div>
         <h1>${esc(p.name)}</h1>
         <div class="price">${esc(p.price)}</div>
         <p class="description">${esc(p.description)}</p>
@@ -139,9 +153,12 @@ function productBody(p) {
 
 // --- write output ---
 fs.rmSync(outDir, { recursive: true, force: true });
-fs.mkdirSync(path.join(outDir, 'assets'), { recursive: true });
-for (const f of ['store.css', 'spin-viewer.js']) {
+fs.mkdirSync(path.join(outDir, 'assets', 'vendor'), { recursive: true });
+for (const f of ['store.css', 'spin-viewer.js', 'site-motion.js']) {
   fs.copyFileSync(path.join(ROOT, 'template/assets', f), path.join(outDir, 'assets', f));
+}
+for (const f of ['gsap.min.js', 'ScrollTrigger.min.js']) {
+  fs.copyFileSync(path.join(ROOT, 'template/assets/vendor', f), path.join(outDir, 'assets/vendor', f));
 }
 fs.writeFileSync(path.join(outDir, 'index.html'), page({
   title: `${store.name} — ${store.tagline}`,
@@ -151,13 +168,13 @@ fs.writeFileSync(path.join(outDir, 'index.html'), page({
 }));
 fs.writeFileSync(path.join(outDir, '.nojekyll'), '');
 
-for (const p of products) {
+products.forEach((p, i) => {
   const pDir = path.join(outDir, 'products', p.slug);
   fs.mkdirSync(pDir, { recursive: true });
   fs.writeFileSync(path.join(pDir, 'index.html'), page({
     title: `${p.name} — ${store.name}`,
     description: p.description,
-    body: productBody(p),
+    body: productBody(p, i),
     depth: 2,
   }));
   const spinSrc = path.join(productsDir, p.slug, 'spin');
@@ -167,6 +184,6 @@ for (const p of products) {
   }
   const photo = path.join(productsDir, p.slug, 'photo.png');
   if (fs.existsSync(photo)) fs.copyFileSync(photo, path.join(pDir, 'photo.png'));
-}
+});
 
 console.log(`Built ${products.length} product(s) → ${outDir}`);
