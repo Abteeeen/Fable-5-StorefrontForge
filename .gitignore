@@ -2,3 +2,4 @@ node_modules/
 dist/
 qa/
 launch-kit/*.png
+qa-landing/

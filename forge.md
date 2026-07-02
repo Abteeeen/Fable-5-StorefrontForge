@@ -35,6 +35,32 @@ intake/<store>/
 8. **Deliver.** Send client: live URL + top-3 creatives + spin viewer link. Order flow is the
    `orderLink` in `store.json` (WhatsApp / form / email) — no checkout liability in v1.
 
+## Main frontend (the business's own site)
+
+`site/` is the public StorefrontForge landing page — offer, live demo (served at `/demo/`),
+ad-kit samples, and the client intake section. The Pages workflow assembles
+`dist/ = site/ + demo build at /demo/` on every push.
+
+### Intake form fields (create as a Google Form, then embed)
+
+1. Business name — short answer, required
+2. Your one sentence — paragraph, required. Helper text: "What do you sell, what's the vibe,
+   how do you take orders? Example: 'Small-batch handmade stoneware from a home studio; warm,
+   earthy, modern; sells mugs, vases and bowls; orders via WhatsApp.'"
+3. WhatsApp number (with country code) — short answer, required
+4. Product photos — file upload, required (allow images, up to 10 files). Helper: "Clear
+   shots on a plain background, one or more per product."
+5. 360° turntable videos — file upload, optional (allow video, up to 10 files). Helper:
+   "10 seconds per product, slowly rotating on a table. This powers the drag-to-rotate viewer."
+6. Product names + prices — paragraph, required. Helper: "One per line, e.g. 'Terra Mug — $34'."
+7. Existing website / Instagram / product links — short answer, optional
+8. Email — short answer, optional (for the preview link if not WhatsApp)
+
+To wire it in: Google Forms → Send → `< >` (embed) → copy the iframe `src` into
+`site/index.html` (marked with an `INTAKE FORM` comment), delete the placeholder div.
+New submissions land in Drive/Sheets → operator copies them into `intake/<store>/` and
+runs the pipeline (steps below).
+
 ## Demo assets
 
 `forge/make-demo-frames.mjs` renders synthetic turntable frames (Three.js, headless Chromium)

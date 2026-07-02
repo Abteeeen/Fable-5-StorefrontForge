@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StorefrontForge — your store, live in 48 hours</title>
+  <meta name="description" content="Send us your product photos and one sentence. Get back a live branded store with 360° product views and a ready-to-run launch ad kit.">
+  <style>
+    :root {
+      --bg: #0e0f13;
+      --surface: #16181f;
+      --surface-2: #1d2029;
+      --text: #f2f3f7;
+      --muted: #9aa0ad;
+      --accent: #6d8dff;
+      --accent-2: #b48cff;
+      --line: rgba(255,255,255,0.08);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.65; -webkit-font-smoothing: antialiased; }
+    a { color: inherit; text-decoration: none; }
+    img { max-width: 100%; display: block; }
+    .container { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+    .grad { background: linear-gradient(92deg, var(--accent), var(--accent-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+    header { position: sticky; top: 0; z-index: 10; background: rgba(14,15,19,0.82); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+    header .container { display: flex; align-items: center; justify-content: space-between; height: 64px; }
+    .logo { font-weight: 800; font-size: 1.15rem; letter-spacing: -0.02em; }
+    .logo span { color: var(--accent); }
+    nav a { margin-left: 26px; font-size: 0.92rem; color: var(--muted); }
+    nav a:hover { color: var(--text); }
+    .btn { display: inline-block; padding: 13px 30px; border-radius: 999px; font-weight: 700; font-size: 0.98rem; transition: transform .15s ease, box-shadow .15s ease; }
+    .btn-primary { background: linear-gradient(92deg, var(--accent), var(--accent-2)); color: #0c0d11; box-shadow: 0 8px 30px rgba(109,141,255,0.35); }
+    .btn-primary:hover { transform: translateY(-2px); }
+    .btn-ghost { border: 1.5px solid var(--line); color: var(--text); }
+    nav .btn { padding: 9px 20px; margin-left: 26px; }
+
+    .hero { padding: 110px 0 90px; text-align: center;
+      background: radial-gradient(900px 420px at 50% -10%, rgba(109,141,255,0.16), transparent); }
+    .hero .eyebrow { font-size: 0.82rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); margin-bottom: 20px; }
+    .hero h1 { font-size: clamp(2.3rem, 5.6vw, 3.9rem); font-weight: 800; letter-spacing: -0.035em; line-height: 1.1; max-width: 850px; margin: 0 auto 22px; }
+    .hero p { font-size: 1.18rem; color: var(--muted); max-width: 640px; margin: 0 auto 40px; }
+    .hero .cta-row { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+
+    section { padding: 84px 0; }
+    .kicker { font-size: 0.8rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); margin-bottom: 12px; }
+    h2 { font-size: clamp(1.7rem, 3.4vw, 2.4rem); font-weight: 800; letter-spacing: -0.03em; margin-bottom: 14px; }
+    .lead { color: var(--muted); max-width: 620px; margin-bottom: 44px; }
+
+    .steps { display: grid; gap: 22px; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
+    .step { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 30px 28px; }
+    .step .num { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-weight: 800; background: rgba(109,141,255,0.14); color: var(--accent); margin-bottom: 18px; }
+    .step h3 { font-size: 1.08rem; margin-bottom: 8px; }
+    .step p { color: var(--muted); font-size: 0.95rem; }
+
+    .demo-card { background: var(--surface); border: 1px solid var(--line); border-radius: 22px; overflow: hidden; display: grid; grid-template-columns: 1fr; }
+    @media (min-width: 880px) { .demo-card { grid-template-columns: 1.25fr 1fr; } }
+    .demo-card .shot { background: #f6f1ea; max-height: 460px; overflow: hidden; }
+    .demo-card .shot img { object-fit: cover; object-position: top; width: 100%; height: 100%; }
+    .demo-card .body { padding: 40px 38px; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: 14px; }
+    .demo-card .body p { color: var(--muted); }
+    .tag { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent-2); border: 1px solid rgba(180,140,255,0.4); padding: 3px 12px; border-radius: 999px; }
+
+    .ads-grid { display: grid; gap: 22px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+    .ads-grid figure { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
+    .ads-grid figcaption { padding: 14px 18px; font-size: 0.85rem; color: var(--muted); }
+
+    .includes { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); margin-top: 8px; }
+    .includes li { list-style: none; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px 20px; color: var(--muted); font-size: 0.97rem; }
+    .includes li strong { color: var(--text); display: block; margin-bottom: 2px; }
+    .includes li::before { content: '✓  '; color: var(--accent); font-weight: 800; }
+
+    #request { background: linear-gradient(180deg, transparent, rgba(109,141,255,0.06)); }
+    .request-grid { display: grid; gap: 40px; grid-template-columns: 1fr; }
+    @media (min-width: 920px) { .request-grid { grid-template-columns: 0.9fr 1.1fr; } }
+    .request-info h2 { margin-bottom: 18px; }
+    .request-info ol { margin: 20px 0 30px 20px; color: var(--muted); }
+    .request-info ol li { margin-bottom: 10px; }
+    .request-info ol li strong { color: var(--text); }
+    .form-shell { background: var(--surface); border: 1px solid var(--line); border-radius: 22px; overflow: hidden; min-height: 620px; display: flex; flex-direction: column; }
+    .form-shell iframe { border: 0; width: 100%; flex: 1; min-height: 620px; background: #fff; }
+    .form-placeholder { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 48px 36px; text-align: center; color: var(--muted); }
+    .form-placeholder .big { font-size: 2.6rem; }
+    .note { font-size: 0.85rem; color: var(--muted); padding: 14px 20px; border-top: 1px solid var(--line); }
+
+    footer { border-top: 1px solid var(--line); padding: 44px 0; text-align: center; color: var(--muted); font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a class="logo" href="#">Storefront<span>Forge</span></a>
+      <nav>
+        <a href="#how">How it works</a>
+        <a href="#demo">Live demo</a>
+        <a href="#ads">Ad kit</a>
+        <a class="btn btn-primary" href="#request">Get your store</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="container">
+      <div class="eyebrow">For small businesses that sell real products</div>
+      <h1>Send product photos and one sentence.<br>Get a <span class="grad">live store with 360° views</span> — in 48 hours.</h1>
+      <p>No agency meetings, no website builder homework. You describe your business in a single sentence, we forge the rest: a branded storefront, interactive 360° product viewers, and a ready-to-post launch ad kit.</p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="#request">Get your store →</a>
+        <a class="btn btn-ghost" href="demo/">See a live example</a>
+      </div>
+    </div>
+  </section>
+
+  <section id="how">
+    <div class="container">
+      <div class="kicker">How it works</div>
+      <h2>Three steps. You only do the first one.</h2>
+      <p class="lead">The whole process runs on our production pipeline — you never touch a website builder.</p>
+      <div class="steps">
+        <div class="step">
+          <div class="num">1</div>
+          <h3>You submit</h3>
+          <p>Product photos (or a 10-second video of each product slowly rotating on a table), one sentence about your business, and your WhatsApp number. That's the entire brief.</p>
+        </div>
+        <div class="step">
+          <div class="num">2</div>
+          <h3>We forge</h3>
+          <p>Our pipeline designs your brand, writes your copy, builds interactive 360° viewers from your photos, and assembles the store. You approve a preview link before anything goes public.</p>
+        </div>
+        <div class="step">
+          <div class="num">3</div>
+          <h3>You launch</h3>
+          <p>Your store goes live at its own URL with order buttons wired to your WhatsApp — plus a launch ad kit: scored, ready-to-post creatives for Instagram and stories.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="demo">
+    <div class="container">
+      <div class="kicker">Proof, not promises</div>
+      <h2>A store forged by this exact pipeline</h2>
+      <p class="lead">Aurora Ceramics went from three product photos and one sentence to this — drag the products to spin them.</p>
+      <div class="demo-card">
+        <a class="shot" href="demo/"><img src="assets/demo-home.png" alt="Aurora Ceramics demo store homepage"></a>
+        <div class="body">
+          <span class="tag">Live demo</span>
+          <h3 style="font-size:1.4rem">Aurora Ceramics</h3>
+          <p>Brief we received: <em>"Small-batch handmade stoneware from a home studio; warm, earthy, modern; sells mugs, vases and bowls; orders via WhatsApp."</em></p>
+          <p>Delivered: branded storefront · 3 products with drag-to-rotate 360° viewers · WhatsApp ordering · 12-creative launch ad kit.</p>
+          <a class="btn btn-primary" href="demo/">Open the live store →</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="ads">
+    <div class="container">
+      <div class="kicker">Included with every store</div>
+      <h2>The launch ad kit</h2>
+      <p class="lead">Every store ships with feed and story creatives built from your real products — scored and ranked, so you post the strongest ones first.</p>
+      <div class="ads-grid">
+        <figure><img src="assets/ad-sample-1.png" alt="Sample feed ad creative"><figcaption>Feed creative · 1080×1080 · product-forward layout</figcaption></figure>
+        <figure><img src="assets/ad-sample-2.png" alt="Sample bold ad creative"><figcaption>Feed creative · 1080×1080 · bold brand layout</figcaption></figure>
+      </div>
+      <div style="margin-top:56px">
+        <h2 style="font-size:1.5rem">What you get</h2>
+        <ul class="includes">
+          <li><strong>Live branded storefront</strong> at its own URL, mobile-first, fast</li>
+          <li><strong>360° product viewers</strong> — drag to rotate, built from your photos</li>
+          <li><strong>Copy & brand design</strong> — headline, story, palette, typography</li>
+          <li><strong>WhatsApp ordering</strong> — no checkout setup, orders come to you</li>
+          <li><strong>Launch ad kit</strong> — square + story creatives, scored & ranked</li>
+          <li><strong>Free updates window</strong> — tweaks to copy and products after launch</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="request">
+    <div class="container">
+      <div class="request-grid">
+        <div class="request-info">
+          <div class="kicker">Get your store</div>
+          <h2>Submit your request</h2>
+          <p style="color:var(--muted)">Have these three things ready — the form takes about five minutes:</p>
+          <ol>
+            <li><strong>One sentence</strong> about your business — what you sell, the vibe, how you take orders.</li>
+            <li><strong>Product photos</strong> — clear shots on a plain background. For the 360° effect, add a short video of each product slowly rotating on a table (a lazy susan or even a slow hand-turn works).</li>
+            <li><strong>Your WhatsApp number</strong> — where order buttons should point, and where we send your preview link.</li>
+          </ol>
+          <p style="color:var(--muted)">We reply with a preview link. Nothing goes live until you approve it.</p>
+        </div>
+        <div class="form-shell">
+          <!-- INTAKE FORM: replace the placeholder below with your Google Form embed.
+               1. Create the form (fields are listed in forge.md → "Intake form fields")
+               2. Google Forms → Send → < > embed → copy the iframe src
+               3. Delete the .form-placeholder div and uncomment the iframe. -->
+          <!-- <iframe src="GOOGLE_FORM_EMBED_URL_HERE" title="StorefrontForge request form"></iframe> -->
+          <div class="form-placeholder">
+            <div class="big">📦</div>
+            <h3>Request form opening soon</h3>
+            <p>We're onboarding our first stores in small batches.<br>Reach us directly and we'll take your brief personally:</p>
+            <a class="btn btn-primary" href="https://wa.me/0000000000?text=Hi%20StorefrontForge!%20I%20want%20a%20store.%20Here%27s%20my%20one%20sentence%3A%20">Send your brief on WhatsApp</a>
+          </div>
+          <div class="note">Photos are used only to build your store. Your store is yours — we hand over everything.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container">© 2026 StorefrontForge · Stores forged from photos and a sentence.</div>
+  </footer>
+</body>
+</html>

@@ -25,8 +25,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Build store
-        run: node forge/build.mjs intake/demo dist
+      - name: Assemble site (landing page + demo store)
+        run: |
+          node forge/build.mjs intake/demo dist/demo
+          cp -r site/. dist/
+          touch dist/.nojekyll
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
