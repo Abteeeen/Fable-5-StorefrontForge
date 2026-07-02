@@ -1,0 +1,155 @@
+{
+  "scoredAt": "2026-07-02T06:50:03.031Z",
+  "method": "heuristic-fallback",
+  "topPicks": [
+    "ember-bowl_clean_square.png",
+    "ridge-vase_clean_square.png",
+    "terra-mug_clean_square.png"
+  ],
+  "results": [
+    {
+      "file": "ember-bowl_clean_square.png",
+      "product": "Ember Bowl",
+      "variant": "clean",
+      "format": "1080x1080",
+      "hook": null,
+      "clarity": null,
+      "thumbnail": null,
+      "brand": null,
+      "total": 7,
+      "note": "heuristic fallback — set OPENROUTER_API_KEY for model scoring"
+    },
+    {
+      "file": "ridge-vase_clean_square.png",
+      "product": "Ridge Vase",
+      "variant": "clean",
+      "format": "1080x1080",
+      "hook": null,
+      "clarity": null,
+      "thumbnail": null,
+      "brand": null,
+      "total": 7,
+      "note": "heuristic fallback — set OPENROUTER_API_KEY for model scoring"
+    },
+    {
+      "file": "terra-mug_clean_square.png",
+      "product": "Terra Mug",
+      "variant": "clean",
+      "format": "1080x1080",
+      "hook": null,
+      "clarity": null,
+      "thumbnail": null,
+      "brand": null,
+      "total": 7,
+      "note": "heuristic fallback — set OPENROUTER_API_KEY for model scoring"
+    },
+    {
+      "file": "ember-bowl_bold_square.png",
+      "product": "Ember Bowl",
+      "variant": "bold",
+      "format": "1080x1080",
+      "hook": null,
+      "clarity": null,
+      "thumbnail": null,
+      "brand": null,
+      "total": 6.5,
+      "note": "heuristic fallback — set OPENROUTER_API_KEY for model scoring"
+    },
+    {
+      "file": "ember-bowl_clean_story.png",
+      "product": "Ember Bowl",
+      "variant": "clean",
+      "format": "1080x1920",
+      "hook": null,
+      "clarity": null,
+      "thumbnail": null,
+      "brand": null,
+      "total": 6.5,
+      "note": "heuristic fallback — set OPENROUTER_API_KEY for model scoring"
+    },
+    {
+      "file": "ridge-vase_bold_square.png",
+      "product": "Ridge Vase",
+      "variant": "bold",
+      "format": "1080x1080",
+      "hook": null,
+      "clarity": null,
+      "thumbnail": null,
+      "brand": null,
+      "total": 6.5,
+      "note": "heuristic fallback — set OPENROUTER_API_KEY for model scoring"
+    },
+    {
+      "file": "ridge-vase_clean_story.png",
+      "product": "Ridge Vase",
+      "variant": "clean",
+      "format": "1080x1920",
+      "hook": null,
+      "clarity": null,
+      "thumbnail": null,
+      "brand": null,
+      "total": 6.5,
+      "note": "heuristic fallback — set OPENROUTER_API_KEY for model scoring"
+    },
+    {
+      "file": "terra-mug_bold_square.png",
+      "product": "Terra Mug",
+      "variant": "bold",
+      "format": "1080x1080",
+      "hook": null,
+      "clarity": null,
+      "thumbnail": null,
+      "brand": null,
+      "total": 6.5,
+      "note": "heuristic fallback — set OPENROUTER_API_KEY for model scoring"
+    },
+    {
+      "file": "terra-mug_clean_story.png",
+      "product": "Terra Mug",
+      "variant": "clean",
+      "format": "1080x1920",
+      "hook": null,
+      "clarity": null,
+      "thumbnail": null,
+      "brand": null,
+      "total": 6.5,
+      "note": "heuristic fallback — set OPENROUTER_API_KEY for model scoring"
+    },
+    {
+      "file": "ember-bowl_bold_story.png",
+      "product": "Ember Bowl",
+      "variant": "bold",
+      "format": "1080x1920",
+      "hook": null,
+      "clarity": null,
+      "thumbnail": null,
+      "brand": null,
+      "total": 6,
+      "note": "heuristic fallback — set OPENROUTER_API_KEY for model scoring"
+    },
+    {
+      "file": "ridge-vase_bold_story.png",
+      "product": "Ridge Vase",
+      "variant": "bold",
+      "format": "1080x1920",
+      "hook": null,
+      "clarity": null,
+      "thumbnail": null,
+      "brand": null,
+      "total": 6,
+      "note": "heuristic fallback — set OPENROUTER_API_KEY for model scoring"
+    },
+    {
+      "file": "terra-mug_bold_story.png",
+      "product": "Terra Mug",
+      "variant": "bold",
+      "format": "1080x1920",
+      "hook": null,
+      "clarity": null,
+      "thumbnail": null,
+      "brand": null,
+      "total": 6,
+      "note": "heuristic fallback — set OPENROUTER_API_KEY for model scoring"
+    }
+  ]
+}

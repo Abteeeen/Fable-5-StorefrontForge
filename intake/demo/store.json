@@ -1,0 +1,21 @@
+{
+  "name": "Aurora Ceramics",
+  "brandMarkHtml": "aurora<em>.</em>ceramics",
+  "headline": "Stoneware with a story, thrown by hand.",
+  "tagline": "Small-batch ceramics from our home studio — warm glazes, honest clay, made to be used every day.",
+  "orderLink": "https://wa.me/0000000000?text=Hi%20Aurora%20Ceramics!%20I%27d%20like%20to%20order",
+  "orderCta": "Order on WhatsApp",
+  "footerNote": "Handmade in small batches. Every piece is one of one.",
+  "palette": {
+    "bg": "#faf6f0",
+    "surface": "#ffffff",
+    "text": "#2b2420",
+    "accent": "#c96f4a",
+    "accentContrast": "#ffffff"
+  },
+  "fonts": {
+    "display": "'Fraunces', Georgia, serif",
+    "body": "'Inter', system-ui, sans-serif",
+    "googleFonts": "family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;600"
+  }
+}
