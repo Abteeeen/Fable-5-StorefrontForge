@@ -61,6 +61,21 @@ To wire it in: Google Forms → Send → `< >` (embed) → copy the iframe `src`
 New submissions land in Drive/Sheets → operator copies them into `intake/<store>/` and
 runs the pipeline (steps below).
 
+## Operator console (`/console/`)
+
+A passcode-gated, fully client-side demo of the pipeline at `site/console/`: intake form
+(photos + one sentence) → live "pipeline log" showing each backend step → forged store
+preview in an iframe, with 360° spin when a product has 6+ photos, plus download/full-screen.
+Nothing is uploaded anywhere — it runs entirely in the visitor's browser, so it costs $0 and
+works on GitHub Pages. Production differences are labeled in the log (AI copywriter, ad kit,
+scoring, public deploy).
+
+- Gate: SHA-256 hash comparison in `site/console/index.html` (`PASS_HASH`). To change the
+  passcode: `node -e "crypto.subtle.digest('SHA-256', new TextEncoder().encode('NEW-CODE')).then(b => console.log([...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')))"`
+  and replace the constant. This is demo-grade privacy (keeps casual visitors out), not
+  security — anyone determined can read the client JS.
+- E2E test: `node forge/test-console.mjs` (unlock → intake → forge → verifies spin canvas).
+
 ## Demo assets
 
 `forge/make-demo-frames.mjs` renders synthetic turntable frames (Three.js, headless Chromium)

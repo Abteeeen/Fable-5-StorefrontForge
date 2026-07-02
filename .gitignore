@@ -3,3 +3,4 @@ dist/
 qa/
 launch-kit/*.png
 qa-landing/
+qa-console/
